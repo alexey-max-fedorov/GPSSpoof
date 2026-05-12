@@ -78,10 +78,9 @@ if [[ -z "$UDID" ]]; then
 fi
 echo "  ok   - device: $UDID"
 
-# --- build & launch ---
+# --- build & install on device, then hand off to Xcode.app for spoof activation ---
 echo ""
-echo "Building and launching on device (this can take 30-60s on first run)..."
-echo "DO NOT interrupt this command. Wait for the 'App is running' line, THEN unplug USB."
+echo "Building (this can take 30-60s on first run)..."
 echo ""
 
 BUILD_LOG="$(mktemp -t gpsspoof-build).log"
@@ -116,7 +115,11 @@ echo "  ok   - build succeeded"
 APP_BUNDLE_ID="com.local.gpsspoof"
 
 echo "Installing .app on device..."
-DERIVED="$(xcodebuild -project "$SCRIPT_DIR/GPSSpoof/GPSSpoof.xcodeproj" -scheme GPSSpoof -showBuildSettings 2>/dev/null \
+DERIVED="$(xcodebuild -project "$SCRIPT_DIR/GPSSpoof/GPSSpoof.xcodeproj" \
+                      -scheme GPSSpoof \
+                      -configuration Debug \
+                      -destination "platform=iOS,id=$UDID" \
+                      -showBuildSettings 2>/dev/null \
   | awk -F' = ' '/ BUILT_PRODUCTS_DIR /{print $2; exit}')"
 APP_PATH="$DERIVED/GPSSpoof.app"
 [[ -d "$APP_PATH" ]] || { echo "ERROR: built .app not found at $APP_PATH" >&2; exit 1; }
@@ -125,31 +128,31 @@ xcrun devicectl device install app --device "$UDID" "$APP_PATH" >>"$BUILD_LOG" 2
   || { echo "ERROR: install failed. Tail of log:" >&2; tail -40 "$BUILD_LOG" >&2; exit 1; }
 echo "  ok   - app installed"
 
+# The actual GPS-spoof trigger lives in Xcode.app's Run action, which honors the
+# scheme's allowLocationSimulation + locationScenarioReference. xcodebuild's
+# headless path explicitly cannot interpret those scheme attributes
+# (xcodebuild -list prints: "not able to deal with ivar '_locationScenarioReference'"),
+# and there is no documented lldb command on current Xcode versions that injects
+# the GPX into a running process. So we hand off to Xcode.app.
+
 echo ""
-echo "Launching with location simulation..."
+echo "============================================================"
+echo "  HANDOFF TO Xcode.app — required to activate GPS spoof"
+echo "============================================================"
 echo ""
-echo "    >>> A debug session is about to start. Wait until you see"
-echo "    >>> 'Process N launched' or similar, THEN unplug the USB cable. <<<"
+echo "  Opening the project now. In Xcode:"
+echo "    1. Select the GPSSpoof scheme (top-left)."
+echo "    2. Select your iPhone as the run destination."
+echo "    3. Press Cmd-R to Run."
+echo "    4. Wait until the bottom status bar shows 'Running GPSSpoof on <device>'."
+echo "    5. UNPLUG the USB cable. Do NOT press Stop in Xcode."
 echo ""
-echo "    Do NOT press Ctrl-C in this terminal."
-echo "    Do NOT close the lldb session."
+echo "  iPhone will report ($LAT, $LON) to all apps until reboot."
+echo ""
+echo "  Why Xcode and not the CLI: only Xcode's Run action triggers"
+echo "  the scheme's locationScenarioReference. The .app is already"
+echo "  installed on your device; Cmd-R just attaches the debug"
+echo "  session that holds the spoof."
 echo ""
 
-# Launch the installed app stopped, then attach lldb so the LaunchAction's
-# location scenario is applied and the debug session persists across unplug.
-xcrun devicectl device process launch \
-    --device "$UDID" \
-    --start-stopped \
-    "$APP_BUNDLE_ID" \
-  >>"$BUILD_LOG" 2>&1 \
-  || { echo "ERROR: launch failed. Tail of log:" >&2; tail -40 "$BUILD_LOG" >&2; exit 1; }
-
-# Attach lldb interactively so the location scenario is applied and the debug
-# session persists. The user unplugs USB while this is running.
-echo "Attaching debugger (this is the session that holds the GPS spoof)..."
-exec xcrun lldb \
-  -o "platform select remote-ios" \
-  -o "platform connect \"$UDID\"" \
-  -o "attach --name GPSSpoof --waitfor" \
-  -o "settings set target.process.location-scenario-file $GPX_PATH" \
-  -o "continue"
+exec open -a Xcode "$SCRIPT_DIR/GPSSpoof/GPSSpoof.xcodeproj"
