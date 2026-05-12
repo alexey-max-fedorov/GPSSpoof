@@ -12,6 +12,7 @@
 
 /* Begin PBXFileReference section */
 		5A3E5AF6245ED953DE23B1EA /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		8E8072691E203D32920DE65A /* target.gpx */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = target.gpx; sourceTree = "<group>"; };
 		B1A36B9023D1D481EABA9EC4 /* GPSSpoof.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = GPSSpoof.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		C11CFE58C4D4FB227D95CE5A /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -30,6 +31,7 @@
 			children = (
 				5A3E5AF6245ED953DE23B1EA /* AppDelegate.swift */,
 				C11CFE58C4D4FB227D95CE5A /* Info.plist */,
+				F002E2E707806D725950FFB2 /* locations */,
 			);
 			path = GPSSpoof;
 			sourceTree = "<group>";
@@ -40,6 +42,14 @@
 				92FE018F46519D00F111491C /* GPSSpoof */,
 				86D26E555E4B980405B336D3 /* Products */,
 			);
+			sourceTree = "<group>";
+		};
+		F002E2E707806D725950FFB2 /* locations */ = {
+			isa = PBXGroup;
+			children = (
+				8E8072691E203D32920DE65A /* target.gpx */,
+			);
+			path = locations;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */

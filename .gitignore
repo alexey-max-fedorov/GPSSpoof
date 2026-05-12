@@ -13,5 +13,7 @@ DerivedData/
 # Local overrides
 .env
 
-# Runtime GPX — rewritten on every spoof.sh run
-GPSSpoof/GPSSpoof/locations/target.gpx
+# target.gpx must be a tracked project resource (Xcode's scheme resolver
+# only honors locationScenarioReference when the file is in the project
+# graph). spoof.sh overwrites its contents on every run; the diff is
+# expected and harmless.

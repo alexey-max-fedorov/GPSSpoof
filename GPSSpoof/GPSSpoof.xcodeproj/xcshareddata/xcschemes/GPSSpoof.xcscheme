@@ -1,43 +1,69 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Scheme
-   LastUpgradeVersion="1500"
-   version="1.7">
+   LastUpgradeVersion = "1500"
+   version = "1.8">
    <BuildAction
-      parallelizeBuildables="YES"
-      buildImplicitDependencies="YES">
+      parallelizeBuildables = "YES"
+      buildImplicitDependencies = "YES">
       <BuildActionEntries>
          <BuildActionEntry
-            buildForTesting="YES"
-            buildForRunning="YES"
-            buildForProfiling="YES"
-            buildForArchiving="YES"
-            buildForAnalyzing="YES">
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
             <BuildableReference
-               BuildableIdentifier="primary"
-               BlueprintIdentifier="3D7C3B73F4B55C62C5E0B8C0"
-               BuildableName="GPSSpoof.app"
-               BlueprintName="GPSSpoof"
-               ReferencedContainer="container:GPSSpoof.xcodeproj">
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "3D7C3B73F4B55C62C5E0B8C0"
+               BuildableName = "GPSSpoof.app"
+               BlueprintName = "GPSSpoof"
+               ReferencedContainer = "container:GPSSpoof.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
    </BuildAction>
+   <TestAction
+      buildConfiguration = "Debug"
+      selectedDebuggerIdentifier = "Xcode.DebuggerFoundation.Debugger.LLDB"
+      selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
+      shouldUseLaunchSchemeArgsEnv = "YES"
+      shouldAutocreateTestPlan = "YES">
+   </TestAction>
    <LaunchAction
-      buildConfiguration="Debug"
-      selectedDebuggerIdentifier="Xcode.DebuggerFoundation.Debugger.LLDB"
-      selectedLauncherIdentifier="Xcode.DebuggerFoundation.Launcher.LLDB"
-      allowLocationSimulation="YES"
-      locationScenarioReference="GPSSpoof/locations/target.gpx"
-      locationScenarioType="1">
+      buildConfiguration = "Debug"
+      selectedDebuggerIdentifier = "Xcode.DebuggerFoundation.Debugger.LLDB"
+      selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
+      launchStyle = "0"
+      useCustomWorkingDirectory = "NO"
+      ignoresPersistentStateOnLaunch = "NO"
+      debugDocumentVersioning = "YES"
+      debugServiceExtension = "internal"
+      allowLocationSimulation = "YES"
+      locationScenarioReference = "GPSSpoof/locations/target.gpx"
+      locationScenarioType = "1">
       <BuildableProductRunnable
-         runnableDebuggingMode="0">
+         runnableDebuggingMode = "0">
          <BuildableReference
-            BuildableIdentifier="primary"
-            BlueprintIdentifier="3D7C3B73F4B55C62C5E0B8C0"
-            BuildableName="GPSSpoof.app"
-            BlueprintName="GPSSpoof"
-            ReferencedContainer="container:GPSSpoof.xcodeproj">
+            BuildableIdentifier = "primary"
+            BlueprintIdentifier = "3D7C3B73F4B55C62C5E0B8C0"
+            BuildableName = "GPSSpoof.app"
+            BlueprintName = "GPSSpoof"
+            ReferencedContainer = "container:GPSSpoof.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </LaunchAction>
+   <ProfileAction
+      buildConfiguration = "Release"
+      shouldUseLaunchSchemeArgsEnv = "YES"
+      savedToolIdentifier = ""
+      useCustomWorkingDirectory = "NO"
+      debugDocumentVersioning = "YES">
+   </ProfileAction>
+   <AnalyzeAction
+      buildConfiguration = "Debug">
+   </AnalyzeAction>
+   <ArchiveAction
+      buildConfiguration = "Release"
+      revealArchiveInOrganizer = "YES">
+   </ArchiveAction>
 </Scheme>

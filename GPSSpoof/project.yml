@@ -18,7 +18,6 @@ targets:
       - path: GPSSpoof
         excludes:
           - "locations/.gitkeep"
-          - "locations/target.gpx"
     info:
       path: GPSSpoof/Info.plist
       properties:
