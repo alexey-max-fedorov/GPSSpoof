@@ -96,7 +96,20 @@ xcodebuild \
   CODE_SIGN_STYLE=Automatic \
   clean build \
   > "$BUILD_LOG" 2>&1 \
-  || { echo "ERROR: build failed. Tail of log:" >&2; tail -40 "$BUILD_LOG" >&2; exit 1; }
+  || {
+       echo "ERROR: build failed. Tail of log:" >&2
+       tail -40 "$BUILD_LOG" >&2
+       if grep -qE "No account for team|requires a development team|Signing for .* requires" "$BUILD_LOG"; then
+         echo "" >&2
+         echo "Signing error detected. Fix:" >&2
+         echo "  1. Open GPSSpoof/GPSSpoof.xcodeproj in Xcode." >&2
+         echo "  2. Select the GPSSpoof target > Signing & Capabilities." >&2
+         echo "  3. Set Team to your Apple ID (a free account works)." >&2
+         echo "  4. Copy the 10-char Team ID and re-run with:" >&2
+         echo "       export TEAM_ID=XXXXXXXXXX && ./spoof.sh ..." >&2
+       fi
+       exit 1
+     }
 
 echo "  ok   - build succeeded"
 
