@@ -1,0 +1,14 @@
+# macOS
+.DS_Store
+
+# Xcode user data — never commit
+**/xcuserdata/
+**/*.xcuserstate
+
+# Build products
+build/
+DerivedData/
+*.xcarchive
+
+# Local overrides
+.env
