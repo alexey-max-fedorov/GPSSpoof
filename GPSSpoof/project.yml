@@ -1,0 +1,35 @@
+name: GPSSpoof
+options:
+  bundleIdPrefix: com.local
+  deploymentTarget:
+    iOS: "15.0"
+  createIntermediateGroups: true
+  generateEmptyDirectories: true
+settings:
+  base:
+    CODE_SIGN_STYLE: Automatic
+    DEVELOPMENT_TEAM: ${TEAM_ID}
+    SWIFT_VERSION: "5.0"
+targets:
+  GPSSpoof:
+    type: application
+    platform: iOS
+    sources:
+      - path: GPSSpoof
+        excludes:
+          - "locations/.gitkeep"
+    info:
+      path: GPSSpoof/Info.plist
+      properties:
+        CFBundleIdentifier: com.local.gpsspoof
+        CFBundleName: GPSSpoof
+        MinimumOSVersion: "15.0"
+        LSRequiresIPhoneOS: true
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.local.gpsspoof
+        TARGETED_DEVICE_FAMILY: "1,2"
+    # We manage the scheme manually so xcodegen does not overwrite our
+    # custom LocationScenario reference. See xcschemes/GPSSpoof.xcscheme.
+    scheme: ~
+schemes: {}
