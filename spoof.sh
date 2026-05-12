@@ -98,7 +98,16 @@ xcodebuild \
   || {
        echo "ERROR: build failed. Tail of log:" >&2
        tail -40 "$BUILD_LOG" >&2
-       if grep -qE "No account for team|requires a development team|Signing for .* requires" "$BUILD_LOG"; then
+       if grep -qE "is not installed\. Please download" "$BUILD_LOG"; then
+         IOS_VER=$(grep -oE "iOS [0-9]+\.[0-9]+" "$BUILD_LOG" | head -1 | cut -d' ' -f2)
+         echo "" >&2
+         echo "Missing iOS platform SDK${IOS_VER:+ ($IOS_VER)}. Fix:" >&2
+         echo "  1. Open Xcode." >&2
+         echo "  2. Xcode menu > Settings > Components." >&2
+         echo "  3. Find iOS ${IOS_VER:-<your iOS version>} and click Get to download it." >&2
+         echo "  4. Wait for the download to finish (multi-GB; can take 10-30 min)." >&2
+         echo "  5. Re-run this script." >&2
+       elif grep -qE "No account for team|requires a development team|Signing for .* requires" "$BUILD_LOG"; then
          echo "" >&2
          echo "Signing error detected. Fix:" >&2
          echo "  1. Open GPSSpoof/GPSSpoof.xcodeproj in Xcode." >&2
