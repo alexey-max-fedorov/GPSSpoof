@@ -12,3 +12,6 @@ DerivedData/
 
 # Local overrides
 .env
+
+# Runtime GPX — rewritten on every spoof.sh run
+GPSSpoof/GPSSpoof/locations/target.gpx
