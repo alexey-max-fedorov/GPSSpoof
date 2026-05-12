@@ -1,13 +1,18 @@
 #!/usr/bin/env bash
-# spoof.sh — generate GPX, deploy to USB-connected iPhone, persist after unplug.
+# spoof.sh — write the GPX, hand off to Xcode for build + run.
 #
-# Usage: ./spoof.sh --lat <lat> --lon <lon> [--name "Label"] [--udid <udid>]
+# Usage: ./spoof.sh --lat <lat> --lon <lon> [--name "Label"] [--no-open]
 #
-# Env:
-#   TEAM_ID  — Apple Developer team id for code signing (optional if Xcode already auto-signed once)
+# Effect: iPhone reports the spoofed coordinates to all apps (Maps, Find My,
+# Snapchat, etc.) once you press Cmd-R in Xcode and unplug USB. Spoof lasts
+# until the iPhone reboots.
 #
-# Effect: iPhone reports the spoofed coordinates to all apps (Maps, Find My, Snapchat, etc.)
-# until reboot. Do NOT stop the Xcode/xcodebuild process — just unplug the USB cable.
+# Why this is split between CLI and Xcode: xcodebuild's headless path cannot
+# honor the scheme's `locationScenarioReference` (xcodebuild -list explicitly
+# warns it can't deal with `_locationScenarioReference`), and there is no
+# documented lldb command on current Xcode versions to inject the GPX into a
+# running process. Only Xcode.app's Run action triggers the simulation. So
+# this script just stages the GPX and opens Xcode for you.
 
 set -euo pipefail
 
@@ -19,26 +24,26 @@ source "$SCRIPT_DIR/lib/gpx.sh"
 LAT=""
 LON=""
 NAME="Spoofed Location"
-UDID=""
+NO_OPEN=0
 
 usage() {
   cat <<EOF
-Usage: $0 --lat <lat> --lon <lon> [--name "Label"] [--udid <udid>]
+Usage: $0 --lat <lat> --lon <lon> [--name "Label"] [--no-open]
 
-  --lat   latitude  (-90  .. 90)
-  --lon   longitude (-180 .. 180)
-  --name  optional waypoint label
-  --udid  override device UDID (default: first connected iPhone)
+  --lat       latitude  (-90  .. 90)
+  --lon       longitude (-180 .. 180)
+  --name      optional waypoint label
+  --no-open   write GPX and exit; skip the Xcode handoff (used by tests)
 EOF
 }
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --lat)  LAT="${2-}";  shift 2 ;;
-    --lon)  LON="${2-}";  shift 2 ;;
-    --name) NAME="${2-}"; shift 2 ;;
-    --udid) UDID="${2-}"; shift 2 ;;
-    -h|--help) usage; exit 0 ;;
+    --lat)      LAT="${2-}";  shift 2 ;;
+    --lon)      LON="${2-}";  shift 2 ;;
+    --name)     NAME="${2-}"; shift 2 ;;
+    --no-open)  NO_OPEN=1;    shift ;;
+    -h|--help)  usage; exit 0 ;;
     *) echo "Unknown arg: $1" >&2; usage >&2; exit 1 ;;
   esac
 done
@@ -56,112 +61,43 @@ if ! write_gpx "$LAT" "$LON" "$NAME" "$GPX_PATH"; then
 fi
 echo "  ok   - GPX written: $LAT, $LON ($NAME)"
 
-# --- find a connected iPhone ---
-if [[ -z "$UDID" ]]; then
-  # xctrace lists physical devices in: "iPhone Name (iOS Version) (UDID)"
-  # Modern UDIDs are 25 chars with a hyphen (e.g. 00008110-001A347E0E33401E),
-  # but older devices use 40 hex chars. Match both, prefer the first iPhone line.
-  UDID=$(xcrun xctrace list devices 2>&1 \
-         | grep -Ei 'iPhone.*\(([0-9A-Fa-f-]{25,40})\)$' \
-         | head -1 \
-         | grep -oE '\(([0-9A-Fa-f-]{25,40})\)$' \
-         | tr -d '()' \
-         || true)
+# --- informational: which iPhone Xcode will likely target ---
+UDID=$(xcrun xctrace list devices 2>&1 \
+       | grep -Ei 'iPhone.*\(([0-9A-Fa-f-]{25,40})\)$' \
+       | head -1 \
+       | grep -oE '\(([0-9A-Fa-f-]{25,40})\)$' \
+       | tr -d '()' \
+       || true)
+if [[ -n "$UDID" ]]; then
+  echo "  ok   - iPhone detected: $UDID"
+else
+  echo "  note - no iPhone visible to xctrace; plug in and trust the Mac before pressing Cmd-R in Xcode."
 fi
 
-if [[ -z "$UDID" ]]; then
-  echo "ERROR: no iPhone detected via USB." >&2
-  echo "  - Plug in via USB and accept the 'Trust This Computer' prompt." >&2
-  echo "  - Make sure the iPhone is unlocked." >&2
-  echo "  - Run 'xcrun xctrace list devices' to verify it appears." >&2
-  exit 1
+if [[ "$NO_OPEN" == "1" ]]; then
+  exit 0
 fi
-echo "  ok   - device: $UDID"
 
-# --- build & install on device, then hand off to Xcode.app for spoof activation ---
-echo ""
-echo "Building (this can take 30-60s on first run)..."
-echo ""
+cat <<EOF
 
-BUILD_LOG="$(mktemp -t gpsspoof-build).log"
-trap 'echo "(build log: $BUILD_LOG)"' EXIT
+============================================================
+  HANDOFF TO Xcode.app — required to activate GPS spoof
+============================================================
 
-xcodebuild \
-  -project "$SCRIPT_DIR/GPSSpoof/GPSSpoof.xcodeproj" \
-  -scheme GPSSpoof \
-  -configuration Debug \
-  -destination "platform=iOS,id=$UDID" \
-  ${TEAM_ID:+DEVELOPMENT_TEAM="$TEAM_ID"} \
-  CODE_SIGN_STYLE=Automatic \
-  clean build \
-  > "$BUILD_LOG" 2>&1 \
-  || {
-       echo "ERROR: build failed. Tail of log:" >&2
-       tail -40 "$BUILD_LOG" >&2
-       if grep -qE "is not installed\. Please download" "$BUILD_LOG"; then
-         IOS_VER=$(grep -oE "iOS [0-9]+\.[0-9]+" "$BUILD_LOG" | head -1 | cut -d' ' -f2)
-         echo "" >&2
-         echo "Missing iOS platform SDK${IOS_VER:+ ($IOS_VER)}. Fix:" >&2
-         echo "  1. Open Xcode." >&2
-         echo "  2. Xcode menu > Settings > Components." >&2
-         echo "  3. Find iOS ${IOS_VER:-<your iOS version>} and click Get to download it." >&2
-         echo "  4. Wait for the download to finish (multi-GB; can take 10-30 min)." >&2
-         echo "  5. Re-run this script." >&2
-       elif grep -qE "No account for team|requires a development team|Signing for .* requires" "$BUILD_LOG"; then
-         echo "" >&2
-         echo "Signing error detected. Fix:" >&2
-         echo "  1. Open GPSSpoof/GPSSpoof.xcodeproj in Xcode." >&2
-         echo "  2. Select the GPSSpoof target > Signing & Capabilities." >&2
-         echo "  3. Set Team to your Apple ID (a free account works)." >&2
-         echo "  4. Copy the 10-char Team ID and re-run with:" >&2
-         echo "       export TEAM_ID=XXXXXXXXXX && ./spoof.sh ..." >&2
-       fi
-       exit 1
-     }
+  Opening the project now. In Xcode:
+    1. Top-left: scheme dropdown should already show 'GPSSpoof'.
+       Next to it, pick your iPhone as the run destination.
+    2. Press Cmd-R to Run.
+       - First run: Xcode may prompt for signing (pick your team).
+       - First run: Xcode may need to download device-side support
+         files; let it finish.
+    3. Wait until the bottom status bar shows
+       'Running GPSSpoof on <device>'.
+    4. UNPLUG the USB cable. Do NOT press Stop in Xcode.
 
-echo "  ok   - build succeeded"
+  iPhone will report ($LAT, $LON) to every app until you reboot.
 
-APP_BUNDLE_ID="com.local.gpsspoof"
-
-echo "Installing .app on device..."
-DERIVED="$(xcodebuild -project "$SCRIPT_DIR/GPSSpoof/GPSSpoof.xcodeproj" \
-                      -scheme GPSSpoof \
-                      -configuration Debug \
-                      -destination "platform=iOS,id=$UDID" \
-                      -showBuildSettings 2>/dev/null \
-  | awk -F' = ' '/ BUILT_PRODUCTS_DIR /{print $2; exit}')"
-APP_PATH="$DERIVED/GPSSpoof.app"
-[[ -d "$APP_PATH" ]] || { echo "ERROR: built .app not found at $APP_PATH" >&2; exit 1; }
-
-xcrun devicectl device install app --device "$UDID" "$APP_PATH" >>"$BUILD_LOG" 2>&1 \
-  || { echo "ERROR: install failed. Tail of log:" >&2; tail -40 "$BUILD_LOG" >&2; exit 1; }
-echo "  ok   - app installed"
-
-# The actual GPS-spoof trigger lives in Xcode.app's Run action, which honors the
-# scheme's allowLocationSimulation + locationScenarioReference. xcodebuild's
-# headless path explicitly cannot interpret those scheme attributes
-# (xcodebuild -list prints: "not able to deal with ivar '_locationScenarioReference'"),
-# and there is no documented lldb command on current Xcode versions that injects
-# the GPX into a running process. So we hand off to Xcode.app.
-
-echo ""
-echo "============================================================"
-echo "  HANDOFF TO Xcode.app — required to activate GPS spoof"
-echo "============================================================"
-echo ""
-echo "  Opening the project now. In Xcode:"
-echo "    1. Select the GPSSpoof scheme (top-left)."
-echo "    2. Select your iPhone as the run destination."
-echo "    3. Press Cmd-R to Run."
-echo "    4. Wait until the bottom status bar shows 'Running GPSSpoof on <device>'."
-echo "    5. UNPLUG the USB cable. Do NOT press Stop in Xcode."
-echo ""
-echo "  iPhone will report ($LAT, $LON) to all apps until reboot."
-echo ""
-echo "  Why Xcode and not the CLI: only Xcode's Run action triggers"
-echo "  the scheme's locationScenarioReference. The .app is already"
-echo "  installed on your device; Cmd-R just attaches the debug"
-echo "  session that holds the spoof."
-echo ""
+  Restore real GPS: reboot the iPhone.
+EOF
 
 exec open -a Xcode "$SCRIPT_DIR/GPSSpoof/GPSSpoof.xcodeproj"

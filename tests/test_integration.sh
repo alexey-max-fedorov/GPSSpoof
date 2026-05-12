@@ -12,10 +12,11 @@ assert_ok() {
 
 echo "Integration smoke:"
 
-# 1. spoof.sh with no device should write GPX, then fail with device error.
-OUTPUT=$( "$ROOT/spoof.sh" --lat 37.3861 --lon -122.0839 --name "MV" 2>&1 || true )
+# 1. spoof.sh --no-open should write GPX and exit 0 cleanly (no Xcode handoff).
+OUTPUT=$( "$ROOT/spoof.sh" --lat 37.3861 --lon -122.0839 --name "MV" --no-open 2>&1 )
+RC=$?
 echo "$OUTPUT" | grep -q "GPX written" && echo "  ok   - GPX-write message" || { echo "  FAIL - missing GPX-write message"; FAILED=1; }
-echo "$OUTPUT" | grep -q "no iPhone detected" && echo "  ok   - device-missing error" || { echo "  FAIL - missing device error"; FAILED=1; }
+[[ "$RC" == "0" ]] && echo "  ok   - exit 0 with --no-open" || { echo "  FAIL - exit $RC with --no-open"; FAILED=1; }
 
 # 2. The GPX file should be valid and contain our coords.
 GPX="$ROOT/GPSSpoof/GPSSpoof/locations/target.gpx"
@@ -33,7 +34,7 @@ grep -q 'allowLocationSimulation="YES"' "$SCHEME" && echo "  ok   - allowLocatio
 grep -q 'locationScenarioReference=' "$SCHEME" && echo "  ok   - locationScenarioReference present" || { echo "  FAIL - missing locationScenarioReference"; FAILED=1; }
 
 # 5. Rejection of bad coords leaves the previous GPX intact.
-"$ROOT/spoof.sh" --lat 999 --lon 0 >/dev/null 2>&1 && { echo "  FAIL - bad coords accepted"; FAILED=1; } || echo "  ok   - bad coords rejected"
+"$ROOT/spoof.sh" --lat 999 --lon 0 --no-open >/dev/null 2>&1 && { echo "  FAIL - bad coords accepted"; FAILED=1; } || echo "  ok   - bad coords rejected"
 LAT2=$(xmllint --xpath 'string(//*[local-name()="wpt"]/@lat)' "$GPX")
 [[ "$LAT2" == "37.3861" ]] && echo "  ok   - prior GPX untouched after rejection" || { echo "  FAIL - GPX got overwritten with bad input"; FAILED=1; }
 

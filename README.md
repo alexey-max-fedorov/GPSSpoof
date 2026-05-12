@@ -36,9 +36,9 @@ export TEAM_ID=XXXXXXXXXX
 ./spoof.sh --lat 37.3861 --lon -122.0839 --name "Mountain View"
 ```
 
-`spoof.sh` writes the GPX, builds and installs the app on your iPhone, then opens the project in Xcode. **In Xcode, press Cmd-R to Run.** Wait until the bottom status bar shows `Running GPSSpoof on <device>`, then **unplug the USB cable**. Do not press Stop in Xcode. Your iPhone now reports the fake coordinates to every app.
+`spoof.sh` writes the GPX file and opens the project in Xcode. **In Xcode, pick your iPhone as the run destination, then press Cmd-R.** Xcode handles building, signing, install, and launch as one operation. Wait until the bottom status bar shows `Running GPSSpoof on <device>`, then **unplug the USB cable**. Do not press Stop in Xcode. Your iPhone now reports the fake coordinates to every app.
 
-Why the Xcode handoff: only Xcode's Run action triggers the scheme's `locationScenarioReference`. `xcodebuild`'s headless path explicitly cannot interpret that attribute (`xcodebuild -list` warns about it on current Xcode versions), and there is no documented lldb command to inject the GPX into a running process. The Xcode Cmd-R path is the only one that's known to work.
+Why everything happens in Xcode: only Xcode's Run action triggers the scheme's `locationScenarioReference`. `xcodebuild`'s headless path explicitly cannot interpret that attribute (`xcodebuild -list` even warns it can't deal with `_locationScenarioReference`), and there is no documented lldb command to inject the GPX into a running process. The Cmd-R path is the only one that's known to work — so the CLI just stages the GPX and steps out of the way.
 
 ## Restoring the real location
 
