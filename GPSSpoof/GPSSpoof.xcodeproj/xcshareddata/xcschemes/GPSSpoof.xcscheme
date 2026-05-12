@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Scheme
+   LastUpgradeVersion="1500"
+   version="1.7">
+   <BuildAction
+      parallelizeBuildables="YES"
+      buildImplicitDependencies="YES">
+      <BuildActionEntries>
+         <BuildActionEntry
+            buildForTesting="YES"
+            buildForRunning="YES"
+            buildForProfiling="YES"
+            buildForArchiving="YES"
+            buildForAnalyzing="YES">
+            <BuildableReference
+               BuildableIdentifier="primary"
+               BlueprintIdentifier="3D7C3B73F4B55C62C5E0B8C0"
+               BuildableName="GPSSpoof.app"
+               BlueprintName="GPSSpoof"
+               ReferencedContainer="container:GPSSpoof.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
+      </BuildActionEntries>
+   </BuildAction>
+   <LaunchAction
+      buildConfiguration="Debug"
+      selectedDebuggerIdentifier="Xcode.DebuggerFoundation.Debugger.LLDB"
+      selectedLauncherIdentifier="Xcode.DebuggerFoundation.Launcher.LLDB"
+      allowLocationSimulation="YES"
+      locationScenarioReference="GPSSpoof/locations/target.gpx"
+      locationScenarioType="1">
+      <BuildableProductRunnable
+         runnableDebuggingMode="0">
+         <BuildableReference
+            BuildableIdentifier="primary"
+            BlueprintIdentifier="3D7C3B73F4B55C62C5E0B8C0"
+            BuildableName="GPSSpoof.app"
+            BlueprintName="GPSSpoof"
+            ReferencedContainer="container:GPSSpoof.xcodeproj">
+         </BuildableReference>
+      </BuildableProductRunnable>
+   </LaunchAction>
+</Scheme>
