@@ -25,6 +25,10 @@ targets:
         CFBundleName: GPSSpoof
         MinimumOSVersion: "15.0"
         LSRequiresIPhoneOS: true
+        UIRequiredDeviceCapabilities:
+          - arm64
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.local.gpsspoof
