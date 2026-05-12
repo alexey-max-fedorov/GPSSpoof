@@ -27,7 +27,20 @@ echo "  ok   - $(xcodebuild -version | head -1)"
 if command -v xcodegen >/dev/null 2>&1; then
   echo "  ok   - xcodegen $(xcodegen --version 2>&1 | head -1)"
   echo "Regenerating Xcode project from project.yml..."
+  # xcodegen wipes xcshareddata/ on regenerate, which would delete our
+  # hand-written scheme carrying the GPX location-simulation wiring.
+  # Stash it across the generate, then restore.
+  SCHEME_SRC="GPSSpoof/GPSSpoof.xcodeproj/xcshareddata/xcschemes/GPSSpoof.xcscheme"
+  SCHEME_STASH=""
+  if [[ -f "$SCHEME_SRC" ]]; then
+    SCHEME_STASH="$(mktemp -t gpsspoof-scheme).xcscheme"
+    cp "$SCHEME_SRC" "$SCHEME_STASH"
+  fi
   ( cd GPSSpoof && TEAM_ID="${TEAM_ID:-}" xcodegen generate )
+  if [[ -n "$SCHEME_STASH" ]]; then
+    mkdir -p "$(dirname "$SCHEME_SRC")"
+    mv "$SCHEME_STASH" "$SCHEME_SRC"
+  fi
   echo "  ok   - project regenerated"
 else
   echo "  warn - xcodegen not installed; using committed project.pbxproj"
