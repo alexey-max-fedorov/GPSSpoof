@@ -25,15 +25,18 @@ LAT=""
 LON=""
 NAME="Spoofed Location"
 NO_OPEN=0
+LISTEN=0
 
 usage() {
   cat <<EOF
-Usage: $0 --lat <lat> --lon <lon> [--name "Label"] [--no-open]
+Usage: $0 --lat <lat> --lon <lon> [--name "Label"] [--no-open] [--listen]
 
   --lat       latitude  (-90  .. 90)
   --lon       longitude (-180 .. 180)
   --name      optional waypoint label
   --no-open   write GPX and exit; skip the Xcode handoff (used by tests)
+  --listen    after the Xcode handoff, run the phone-control helper
+              (lib/location_helper.py) in the foreground; Ctrl-C to stop
 EOF
 }
 
@@ -43,6 +46,7 @@ while [[ $# -gt 0 ]]; do
     --lon)      LON="${2-}";  shift 2 ;;
     --name)     NAME="${2-}"; shift 2 ;;
     --no-open)  NO_OPEN=1;    shift ;;
+    --listen)   LISTEN=1;     shift ;;
     -h|--help)  usage; exit 0 ;;
     *) echo "Unknown arg: $1" >&2; usage >&2; exit 1 ;;
   esac
@@ -75,6 +79,7 @@ else
 fi
 
 if [[ "$NO_OPEN" == "1" ]]; then
+  # --listen is intentionally moot here; --no-open short-circuits before the handoff (test-only flag).
   exit 0
 fi
 
@@ -115,5 +120,14 @@ cat <<EOF
 
   Restore real GPS: reboot the iPhone.
 EOF
+
+if [[ "$LISTEN" == "1" ]]; then
+  open -a Xcode "$SCRIPT_DIR/GPSSpoof/GPSSpoof.xcodeproj"
+  echo
+  echo "  Starting the phone-control helper. Once the app is running on"
+  echo "  the iPhone, enter the URL below on its control screen to change"
+  echo "  the location without touching the Mac."
+  exec python3 "$SCRIPT_DIR/lib/location_helper.py"
+fi
 
 exec open -a Xcode "$SCRIPT_DIR/GPSSpoof/GPSSpoof.xcodeproj"

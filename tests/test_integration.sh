@@ -66,4 +66,8 @@ done
 python3 "$ROOT/tests/test_helper.py" >/dev/null 2>&1 \
   && echo "  ok   - location_helper unit tests" || { echo "  FAIL - location_helper unit tests"; FAILED=1; }
 
+# 8. spoof.sh advertises --listen.
+"$ROOT/spoof.sh" --help 2>&1 | grep -q -- '--listen' \
+  && echo "  ok   - spoof.sh --help mentions --listen" || { echo "  FAIL - --listen missing from usage"; FAILED=1; }
+
 exit "$FAILED"
