@@ -79,4 +79,10 @@ grep -q 'NSLocalNetworkUsageDescription' "$PLIST" \
 grep -q 'NSAllowsLocalNetworking' "$ROOT/GPSSpoof/project.yml" \
   && echo "  ok   - project.yml carries networking keys" || { echo "  FAIL - project.yml missing networking keys (xcodegen regen would drop them)"; FAILED=1; }
 
+# 10. Phone-side control UI is present and compiled into the target.
+[[ -f "$ROOT/GPSSpoof/GPSSpoof/ControlViewController.swift" ]] \
+  && echo "  ok   - ControlViewController.swift exists" || { echo "  FAIL - ControlViewController.swift missing"; FAILED=1; }
+grep -q 'ControlViewController.swift' "$ROOT/GPSSpoof/GPSSpoof.xcodeproj/project.pbxproj" \
+  && echo "  ok   - ControlViewController in project graph" || { echo "  FAIL - ControlViewController missing from pbxproj"; FAILED=1; }
+
 exit "$FAILED"

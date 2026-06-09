@@ -12,30 +12,14 @@ import CoreLocation
 class AppDelegate: UIResponder, UIApplicationDelegate, CLLocationManagerDelegate {
     var window: UIWindow?
     private let locationManager = CLLocationManager()
-    private let statusLabel = UILabel()
+    private let controlVC = ControlViewController()
 
     func application(
         _ application: UIApplication,
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
     ) -> Bool {
-        let root = UIViewController()
-        root.view.backgroundColor = .systemBackground
-
-        statusLabel.text = "GPSSpoof\nwaiting for location permission…"
-        statusLabel.numberOfLines = 0
-        statusLabel.textAlignment = .center
-        statusLabel.font = .monospacedSystemFont(ofSize: 15, weight: .regular)
-        statusLabel.translatesAutoresizingMaskIntoConstraints = false
-        root.view.addSubview(statusLabel)
-        NSLayoutConstraint.activate([
-            statusLabel.centerXAnchor.constraint(equalTo: root.view.centerXAnchor),
-            statusLabel.centerYAnchor.constraint(equalTo: root.view.centerYAnchor),
-            statusLabel.leadingAnchor.constraint(greaterThanOrEqualTo: root.view.leadingAnchor, constant: 16),
-            statusLabel.trailingAnchor.constraint(lessThanOrEqualTo: root.view.trailingAnchor, constant: -16),
-        ])
-
         window = UIWindow(frame: UIScreen.main.bounds)
-        window?.rootViewController = root
+        window?.rootViewController = controlVC
         window?.makeKeyAndVisible()
 
         // Locking is safe once the background location session is running;
@@ -81,6 +65,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate, CLLocationManagerDelegate
     }
 
     private func setStatus(_ text: String) {
-        DispatchQueue.main.async { self.statusLabel.text = text }
+        controlVC.showStatus(text)
     }
 }
