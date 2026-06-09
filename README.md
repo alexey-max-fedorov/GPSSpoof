@@ -79,6 +79,40 @@ The script updates the GPX file and opens the project in Xcode. **In Xcode, sele
 
 The simulation applies system-wide during the active debug session. See [Persistence](#persistence) for how to keep the session alive.
 
+## Changing the location from the phone
+
+Once the debug session is running, you can move the spoofed location from the
+iPhone itself — no Mac interaction needed beyond initial setup.
+
+Start the session with the helper:
+
+```bash
+./spoof.sh --lat 37.3861 --lon -122.0839 --listen
+```
+
+`--listen` opens Xcode as usual, then runs a small helper
+(`lib/location_helper.py`) in the foreground. The helper prints a URL like
+`http://192.168.1.20:8755` — enter it once in the GPSSpoof app on the phone
+(it is remembered). Type new coordinates and tap **Apply location**: the
+helper writes them into one of two alternating GPX slots (`live_a.gpx` /
+`live_b.gpx`) and clicks **Debug ▸ Simulate Location** in Xcode for you, so
+the running session re-reads the file. Two slots are used because Xcode
+caches a re-selected GPX file.
+
+One-time Mac setup: grant **Accessibility** permission to the terminal app
+running the helper (System Settings ▸ Privacy & Security ▸ Accessibility).
+The helper returns a clear error to the phone if the permission is missing.
+
+Notes:
+- Each Apply briefly brings Xcode to the front on the Mac.
+- The first Apply triggers iOS's one-time **Local Network** permission prompt
+  on the phone — allow it.
+- Stopping the helper (Ctrl-C) does not end the spoof session; it only stops
+  phone control. Re-run `python3 lib/location_helper.py` to get it back.
+- If the helper reports a missing menu item, run
+  `python3 lib/location_helper.py --probe-menu` to see the names Xcode
+  actually shows, and check that a debug session is running.
+
 ## Restoring the real location
 
 Reboot your iPhone to restore normal location reporting.
@@ -97,6 +131,7 @@ Reboot your iPhone to restore normal location reporting.
 ```bash
 bash tests/test_gpx.sh
 bash tests/test_integration.sh
+python3 tests/test_helper.py
 ```
 
 These tests run without a physical device.
@@ -107,10 +142,12 @@ These tests run without a physical device.
 spoof.sh                                 # Main CLI entrypoint
 setup.sh                                 # One-time setup checks
 lib/gpx.sh                               # GPX generation and validation
+lib/location_helper.py                   # Mac-side phone-control helper
 tests/                                   # Test scripts
 GPSSpoof/project.yml                     # xcodegen configuration
 GPSSpoof/GPSSpoof.xcodeproj/             # Generated project
 GPSSpoof/GPSSpoof/AppDelegate.swift      # Minimal iOS app
+GPSSpoof/GPSSpoof/ControlViewController.swift  # Phone-side control UI
 GPSSpoof/GPSSpoof/Info.plist
 GPSSpoof/GPSSpoof/locations/target.gpx   # GPX file updated per run
 ```

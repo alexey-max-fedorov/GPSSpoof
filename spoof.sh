@@ -114,6 +114,8 @@ cat <<EOF
     - Keep the Mac awake (caffeinate -dis, or lid open + power).
     - The blue location indicator on the iPhone is the heartbeat:
       visible = session alive.
+    - Want to move the spoofed location later without the Mac?
+      Re-run with --listen and enter the printed URL in the app.
 
   iPhone reports ($LAT, $LON) to every app while the session
   holds. The screen can lock; the spoof now survives that.
