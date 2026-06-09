@@ -150,6 +150,8 @@ GPSSpoof/GPSSpoof/AppDelegate.swift      # Minimal iOS app
 GPSSpoof/GPSSpoof/ControlViewController.swift  # Phone-side control UI
 GPSSpoof/GPSSpoof/Info.plist
 GPSSpoof/GPSSpoof/locations/target.gpx   # GPX file updated per run
+GPSSpoof/GPSSpoof/locations/live_a.gpx   # Alternating live slots rewritten by
+GPSSpoof/GPSSpoof/locations/live_b.gpx   #   the helper during phone control
 ```
 
 ## Important Notes
