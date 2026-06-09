@@ -36,5 +36,12 @@
 	</array>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Keeps the location-simulation debug session alive while the phone is locked.</string>
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsLocalNetworking</key>
+		<true/>
+	</dict>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>Sends new spoof coordinates to the helper running on your Mac.</string>
 </dict>
 </plist>

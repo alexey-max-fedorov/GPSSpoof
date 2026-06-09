@@ -70,4 +70,13 @@ python3 "$ROOT/tests/test_helper.py" >/dev/null 2>&1 \
 "$ROOT/spoof.sh" --help 2>&1 | grep -q -- '--listen' \
   && echo "  ok   - spoof.sh --help mentions --listen" || { echo "  FAIL - --listen missing from usage"; FAILED=1; }
 
+# 9. Networking plist keys for the phone-control channel.
+PLIST="$ROOT/GPSSpoof/GPSSpoof/Info.plist"
+xmllint --xpath '//key[text()="NSAppTransportSecurity"]/following-sibling::dict[1]/key[text()="NSAllowsLocalNetworking"]' "$PLIST" >/dev/null 2>&1 \
+  && echo "  ok   - ATS allows local networking" || { echo "  FAIL - NSAllowsLocalNetworking missing"; FAILED=1; }
+grep -q 'NSLocalNetworkUsageDescription' "$PLIST" \
+  && echo "  ok   - local-network usage description" || { echo "  FAIL - NSLocalNetworkUsageDescription missing"; FAILED=1; }
+grep -q 'NSAllowsLocalNetworking' "$ROOT/GPSSpoof/project.yml" \
+  && echo "  ok   - project.yml carries networking keys" || { echo "  FAIL - project.yml missing networking keys (xcodegen regen would drop them)"; FAILED=1; }
+
 exit "$FAILED"

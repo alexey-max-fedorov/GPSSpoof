@@ -35,6 +35,11 @@ targets:
         UIBackgroundModes:
           - location
         NSLocationWhenInUseUsageDescription: Keeps the location-simulation debug session alive while the phone is locked.
+        # Phone-control channel: the app POSTs cleartext HTTP to the helper
+        # on the Mac's LAN IP. Both keys are plain plist entries.
+        NSAppTransportSecurity:
+          NSAllowsLocalNetworking: true
+        NSLocalNetworkUsageDescription: Sends new spoof coordinates to the helper running on your Mac.
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.local.gpsspoof
