@@ -62,4 +62,8 @@ for SLOT in live_a live_b; do
     || { echo "  FAIL - $SLOT.gpx waypoint name='$NAME', expected '$SLOT'"; FAILED=1; }
 done
 
+# 7. Mac-side helper unit tests (dry-run; no Xcode or device involved).
+python3 "$ROOT/tests/test_helper.py" >/dev/null 2>&1 \
+  && echo "  ok   - location_helper unit tests" || { echo "  FAIL - location_helper unit tests"; FAILED=1; }
+
 exit "$FAILED"
