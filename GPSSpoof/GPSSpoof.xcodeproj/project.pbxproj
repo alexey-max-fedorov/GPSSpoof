@@ -13,7 +13,7 @@
 /* Begin PBXFileReference section */
 		5A3E5AF6245ED953DE23B1EA /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		8E8072691E203D32920DE65A /* target.gpx */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = target.gpx; sourceTree = "<group>"; };
-		B1A36B9023D1D481EABA9EC4 /* GPSSpoof.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = GPSSpoof.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		B1A36B9023D1D481EABA9EC4 /* GPSSpoof.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = GPSSpoof.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		C11CFE58C4D4FB227D95CE5A /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -82,7 +82,6 @@
 				LastUpgradeCheck = 1430;
 				TargetAttributes = {
 					3D7C3B73F4B55C62C5E0B8C0 = {
-						DevelopmentTeam = "";
 						ProvisioningStyle = Automatic;
 					};
 				};
@@ -181,6 +180,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
+				DEVELOPMENT_TEAM = ZV4B6559W7;
 				INFOPLIST_FILE = GPSSpoof/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -262,6 +262,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
+				DEVELOPMENT_TEAM = ZV4B6559W7;
 				INFOPLIST_FILE = GPSSpoof/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
