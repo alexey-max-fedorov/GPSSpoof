@@ -49,4 +49,17 @@ grep -q 'UIBackgroundModes' "$ROOT/GPSSpoof/project.yml" \
 LAT2=$(xmllint --xpath 'string(//*[local-name()="wpt"]/@lat)' "$GPX")
 [[ "$LAT2" == "37.3861" ]] && echo "  ok   - prior GPX untouched after rejection" || { echo "  FAIL - GPX got overwritten with bad input"; FAILED=1; }
 
+# 6. Live-slot GPX files exist, are well-formed, and are in the project graph
+# (Xcode's Simulate Location menu only lists workspace GPX files).
+for SLOT in live_a live_b; do
+  SLOT_GPX="$ROOT/GPSSpoof/GPSSpoof/locations/$SLOT.gpx"
+  assert_ok "$SLOT.gpx is well-formed" xmllint --noout "$SLOT_GPX"
+  grep -q "$SLOT.gpx" "$ROOT/GPSSpoof/GPSSpoof.xcodeproj/project.pbxproj" \
+    && echo "  ok   - $SLOT.gpx in project graph" || { echo "  FAIL - $SLOT.gpx missing from pbxproj"; FAILED=1; }
+  NAME=$(xmllint --xpath 'string(//*[local-name()="name"])' "$SLOT_GPX")
+  [[ "$NAME" == "$SLOT" ]] \
+    && echo "  ok   - $SLOT.gpx waypoint name matches slot" \
+    || { echo "  FAIL - $SLOT.gpx waypoint name='$NAME', expected '$SLOT'"; FAILED=1; }
+done
+
 exit "$FAILED"
