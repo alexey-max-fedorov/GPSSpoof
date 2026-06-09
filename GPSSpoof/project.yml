@@ -29,6 +29,12 @@ targets:
           - arm64
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
+        # Background location keepalive: keeps the debuggee process (and with
+        # it the Xcode location-simulation session) alive while the phone is
+        # locked. Plain Info.plist keys — no paid-account entitlement needed.
+        UIBackgroundModes:
+          - location
+        NSLocationWhenInUseUsageDescription: Keeps the location-simulation debug session alive while the phone is locked.
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.local.gpsspoof

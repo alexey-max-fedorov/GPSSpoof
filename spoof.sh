@@ -91,11 +91,27 @@ cat <<EOF
        - First run: Xcode may prompt for signing (pick your team).
        - First run: Xcode may need to download device-side support
          files; let it finish.
-    3. Wait until the bottom status bar shows
-       'Running GPSSpoof on <device>'.
-    4. UNPLUG the USB cable. Do NOT press Stop in Xcode.
+    3. On the iPhone, when the app asks for location access, tap
+       'Allow While Using App'. (First run only. This arms the
+       background keepalive that survives screen lock.)
+    4. Wait until the bottom status bar shows
+       'Running GPSSpoof on <device>' and the app displays the
+       spoofed coordinates.
 
-  iPhone will report ($LAT, $LON) to every app until you reboot.
+  Keeping the session alive:
+    - Most stable: leave the USB cable plugged in. A wired session
+      does not care about WiFi changes.
+    - If you unplug: do NOT press Stop in Xcode. Put the iPhone on
+      a charger, keep Mac and iPhone on the same network, and do
+      not switch WiFi networks mid-session. (Hotspot users:
+      connect the Mac to the iPhone's hotspot BEFORE pressing
+      Cmd-R, then stay on it.)
+    - Keep the Mac awake (caffeinate -dis, or lid open + power).
+    - The blue location indicator on the iPhone is the heartbeat:
+      visible = session alive.
+
+  iPhone reports ($LAT, $LON) to every app while the session
+  holds. The screen can lock; the spoof now survives that.
 
   Restore real GPS: reboot the iPhone.
 EOF
