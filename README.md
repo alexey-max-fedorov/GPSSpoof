@@ -119,6 +119,13 @@ Notes:
   `target.gpx` and tells Xcode to run again. The app reinstalls and
   relaunches on the phone in roughly 30 seconds; wait for that before
   applying again.
+- The control above the **helper address** button picks the switch method
+  and is remembered: **v2 · self-healing** (default) checks the session
+  before clicking and restarts it when dead, as described above;
+  **v1 · raw clicks** is the original blind menu click — about a second
+  faster and never triggers a rebuild, but if the session has died it
+  silently does nothing. The choice is sent per request as the `"mode"`
+  field of `POST /location` (missing = v2).
 - The first Apply triggers iOS's one-time **Local Network** permission prompt
   on the phone — allow it.
 - Stopping the helper (Ctrl-C) does not end the spoof session; it only stops
