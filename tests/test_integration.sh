@@ -100,4 +100,13 @@ grep -q 'GPSSpoofHelper' "$ROOT/GPSSpoof/GPSSpoof.xcodeproj/project.pbxproj" \
 [[ ! -e "$ROOT/setup.sh" ]] \
   && echo "  ok   - setup.sh absorbed into spoof.sh" || { echo "  FAIL - setup.sh still present"; FAILED=1; }
 
+# 12. The iOS app target compiles standalone (simulator SDK, no signing, no
+# scheme involvement). Guards the phone-side UI code. To debug a failure,
+# re-run the xcodebuild line below without the >/dev/null redirection.
+xcodebuild -project "$ROOT/GPSSpoof/GPSSpoof.xcodeproj" -target GPSSpoof \
+  -configuration Debug -sdk iphonesimulator \
+  SYMROOT="$ROOT/build/sim" OBJROOT="$ROOT/build/sim/obj" \
+  ONLY_ACTIVE_ARCH=NO CODE_SIGNING_ALLOWED=NO build >/dev/null 2>&1 \
+  && echo "  ok   - iOS app builds (simulator)" || { echo "  FAIL - iOS app build failed"; FAILED=1; }
+
 exit "$FAILED"
