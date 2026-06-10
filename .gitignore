@@ -13,9 +13,6 @@ DerivedData/
 # Local overrides
 .env
 
-# Python bytecode (lib/location_helper.py)
-__pycache__/
-
 # target.gpx must be a tracked project resource (Xcode's scheme resolver
 # only honors locationScenarioReference when the file is in the project
 # graph). spoof.sh overwrites its contents on every run; the diff is

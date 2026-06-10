@@ -62,13 +62,18 @@ for SLOT in live_a live_b; do
     || { echo "  FAIL - $SLOT.gpx waypoint name='$NAME', expected '$SLOT'"; FAILED=1; }
 done
 
-# 7. Mac-side helper unit tests (dry-run; no Xcode or device involved).
-python3 "$ROOT/tests/test_helper.py" >/dev/null 2>&1 \
-  && echo "  ok   - location_helper unit tests" || { echo "  FAIL - location_helper unit tests"; FAILED=1; }
+# 7. Mac-side helper black-box tests (builds GPSSpoofHelper, dry-run only).
+bash "$ROOT/tests/test_helper.sh" >/dev/null 2>&1 \
+  && echo "  ok   - helper black-box tests" || { echo "  FAIL - helper black-box tests"; FAILED=1; }
 
-# 8. spoof.sh advertises --listen.
-"$ROOT/spoof.sh" --help 2>&1 | grep -q -- '--listen' \
+# 8. spoof.sh is the single entry point: --listen plus both subcommands.
+HELP_OUT="$("$ROOT/spoof.sh" --help 2>&1)"
+echo "$HELP_OUT" | grep -q -- '--listen' \
   && echo "  ok   - spoof.sh --help mentions --listen" || { echo "  FAIL - --listen missing from usage"; FAILED=1; }
+echo "$HELP_OUT" | grep -qE '^[[:space:]]*setup[[:space:]]' \
+  && echo "  ok   - spoof.sh --help mentions setup" || { echo "  FAIL - setup missing from usage"; FAILED=1; }
+echo "$HELP_OUT" | grep -qE '^[[:space:]]*helper[[:space:]]' \
+  && echo "  ok   - spoof.sh --help mentions helper" || { echo "  FAIL - helper missing from usage"; FAILED=1; }
 
 # 9. Networking plist keys for the phone-control channel.
 PLIST="$ROOT/GPSSpoof/GPSSpoof/Info.plist"
@@ -84,5 +89,15 @@ grep -q 'NSAllowsLocalNetworking' "$ROOT/GPSSpoof/project.yml" \
   && echo "  ok   - ControlViewController.swift exists" || { echo "  FAIL - ControlViewController.swift missing"; FAILED=1; }
 grep -q 'ControlViewController.swift' "$ROOT/GPSSpoof/GPSSpoof.xcodeproj/project.pbxproj" \
   && echo "  ok   - ControlViewController in project graph" || { echo "  FAIL - ControlViewController missing from pbxproj"; FAILED=1; }
+
+# 11. The Swift helper is bundled in the Xcode project and Python is gone.
+grep -q 'GPSSpoofHelper' "$ROOT/GPSSpoof/GPSSpoof.xcodeproj/project.pbxproj" \
+  && echo "  ok   - GPSSpoofHelper target in pbxproj" || { echo "  FAIL - GPSSpoofHelper missing from pbxproj"; FAILED=1; }
+[[ -f "$ROOT/GPSSpoof/Helper/main.swift" ]] \
+  && echo "  ok   - helper sources present" || { echo "  FAIL - GPSSpoof/Helper/main.swift missing"; FAILED=1; }
+[[ ! -e "$ROOT/lib" ]] \
+  && echo "  ok   - lib/ retired (logic lives in spoof.sh + GPSSpoof/Helper/)" || { echo "  FAIL - stale lib/ still present"; FAILED=1; }
+[[ ! -e "$ROOT/setup.sh" ]] \
+  && echo "  ok   - setup.sh absorbed into spoof.sh" || { echo "  FAIL - setup.sh still present"; FAILED=1; }
 
 exit "$FAILED"
