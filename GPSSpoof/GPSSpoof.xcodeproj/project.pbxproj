@@ -12,6 +12,7 @@
 		37CC4663B5D2FAF571A1506A /* GPX.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D01F2E63D3FD41048FD55DF /* GPX.swift */; };
 		4E9139427E344A94A4670E7E /* XcodeTrigger.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1846CFE9D9AF8878340C533 /* XcodeTrigger.swift */; };
 		6D388ADA6A4806CA72C0B667 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A3E5AF6245ED953DE23B1EA /* AppDelegate.swift */; };
+		7D9003919F26A3D97EEC175F /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBA5A89C57590265EC10A65D /* Theme.swift */; };
 		D7115760F5E0A1106FB60FFB /* HTTPServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54A38DFEA5D3AF824C03083C /* HTTPServer.swift */; };
 		F06D210544745CEBCD2C4ECE /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = 107AB17E59EE1EE2034C8C10 /* main.swift */; };
 /* End PBXBuildFile section */
@@ -28,6 +29,7 @@
 		8FF5BC170B9AB22E884DDB3D /* ControlViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ControlViewController.swift; sourceTree = "<group>"; };
 		B1A36B9023D1D481EABA9EC4 /* GPSSpoof.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = GPSSpoof.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		C11CFE58C4D4FB227D95CE5A /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		CBA5A89C57590265EC10A65D /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
 		EA92AAC9A2F95CA49D88761B /* live_a.gpx */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = live_a.gpx; sourceTree = "<group>"; };
 		F1846CFE9D9AF8878340C533 /* XcodeTrigger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = XcodeTrigger.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -60,6 +62,7 @@
 				5A3E5AF6245ED953DE23B1EA /* AppDelegate.swift */,
 				8FF5BC170B9AB22E884DDB3D /* ControlViewController.swift */,
 				C11CFE58C4D4FB227D95CE5A /* Info.plist */,
+				CBA5A89C57590265EC10A65D /* Theme.swift */,
 				F002E2E707806D725950FFB2 /* locations */,
 			);
 			path = GPSSpoof;
@@ -179,6 +182,7 @@
 			files = (
 				6D388ADA6A4806CA72C0B667 /* AppDelegate.swift in Sources */,
 				055D630C28F867FB4F6AC960 /* ControlViewController.swift in Sources */,
+				7D9003919F26A3D97EEC175F /* Theme.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

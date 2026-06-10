@@ -19,6 +19,9 @@ class AppDelegate: UIResponder, UIApplicationDelegate, CLLocationManagerDelegate
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
     ) -> Bool {
         window = UIWindow(frame: UIScreen.main.bounds)
+        // The control UI is a fixed dark design (headliner palette); forcing
+        // dark also keeps MKMapView in its dark appearance.
+        window?.overrideUserInterfaceStyle = .dark
         window?.rootViewController = controlVC
         window?.makeKeyAndVisible()
 
@@ -26,6 +29,9 @@ class AppDelegate: UIResponder, UIApplicationDelegate, CLLocationManagerDelegate
         // disabling auto-lock just removes one way to trigger it accidentally
         // before permission is granted.
         application.isIdleTimerDisabled = true
+        controlVC.onRequestPermission = { [weak self] in
+            self?.locationManager.requestWhenInUseAuthorization()
+        }
 
         locationManager.delegate = self
         locationManager.desiredAccuracy = kCLLocationAccuracyBest
@@ -36,6 +42,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate, CLLocationManagerDelegate
     }
 
     func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
+        controlVC.updateAuthorization(manager.authorizationStatus)
         switch manager.authorizationStatus {
         case .authorizedWhenInUse, .authorizedAlways:
             // Requires the `location` entry in UIBackgroundModes, otherwise
@@ -44,7 +51,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate, CLLocationManagerDelegate
             manager.startUpdatingLocation()
             setStatus("keepalive armed\nwaiting for first fix…")
         case .denied, .restricted:
-            setStatus("location permission denied —\nthe session will end when the phone locks.\nEnable in Settings > Privacy > Location Services.")
+            setStatus("location permission denied —\nthe session will end when the phone locks.")
         case .notDetermined:
             break
         @unknown default:

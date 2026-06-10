@@ -1,4 +1,5 @@
 import UIKit
+import CoreLocation
 
 // Remote control for the Mac-side helper (GPSSpoofHelper): POSTs new
 // coordinates to it, and the helper re-points the running Xcode simulation.
@@ -10,6 +11,9 @@ final class ControlViewController: UIViewController {
     private let lonField = UITextField()
     private let applyButton = UIButton(type: .system)
     private let resultLabel = UILabel()
+
+    /// Set by AppDelegate; triggers the system when-in-use permission prompt.
+    var onRequestPermission: (() -> Void)?
 
     private static let urlDefaultsKey = "GPSSpoofHelperURL"
 
@@ -59,6 +63,10 @@ final class ControlViewController: UIViewController {
         tap.cancelsTouchesInView = false
         view.addGestureRecognizer(tap)
     }
+
+    /// Called by AppDelegate whenever CoreLocation authorization changes.
+    /// Surfaced as a permission card in the redesigned UI (next task).
+    func updateAuthorization(_ status: CLAuthorizationStatus) {}
 
     /// Called by AppDelegate with keepalive / simulated-fix updates.
     func showStatus(_ text: String) {
