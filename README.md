@@ -135,8 +135,8 @@ bash tests/test_helper.sh        # Swift helper, black-box over loopback HTTP
 bash tests/test_integration.sh   # end-to-end smoke checks
 ```
 
-These tests run without a physical device. `test_helper.sh` and
-`test_integration.sh` build the `GPSSpoofHelper` target on first run.
+These tests run without a physical device. `test_helper.sh` builds the
+`GPSSpoofHelper` target on first run; `test_integration.sh` delegates to it.
 
 ## Project layout
 
