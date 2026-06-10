@@ -93,7 +93,9 @@ Start the session with the helper:
 `--listen` opens Xcode as usual, then builds and runs `GPSSpoofHelper` — a
 small Swift command-line tool that lives in the same Xcode project — in the
 foreground. The helper prints a URL like `http://192.168.1.20:8755` — enter
-it once in the GPSSpoof app on the phone (it is remembered). Pan the embedded
+it once in the GPSSpoof app on the phone (after the first save the field
+tucks away behind the **helper address** button at the bottom of the
+screen). Pan the embedded
 map and tap **Set location to map center**, or type exact coordinates and tap
 **Apply typed coordinates**: the helper writes them into one of two
 alternating GPX slots (`live_a.gpx` / `live_b.gpx`) and clicks

@@ -14,6 +14,7 @@ final class ControlViewController: UIViewController {
     private let permissionLabel = UILabel()
     private let permissionButton = Theme.goldButton(title: "Allow location access")
 
+    private let urlToggleButton = UIButton(type: .system)
     private let urlField = Theme.field(
         placeholder: "helper URL, e.g. http://192.168.1.20:8755", keyboard: .URL)
 
@@ -73,6 +74,11 @@ final class ControlViewController: UIViewController {
         urlField.autocapitalizationType = .none
         urlField.autocorrectionType = .no
         urlField.text = UserDefaults.standard.string(forKey: Self.urlDefaultsKey)
+        urlToggleButton.titleLabel?.font = .monospacedSystemFont(ofSize: 13, weight: .regular)
+        urlToggleButton.setTitleColor(Theme.gold, for: .normal)
+        urlToggleButton.addTarget(self, action: #selector(urlToggleTapped), for: .touchUpInside)
+        // Tucked away once a helper URL is saved; first run starts revealed.
+        setURLFieldRevealed((urlField.text ?? "").isEmpty)
 
         mapView.delegate = self
         mapView.isRotateEnabled = false
@@ -112,14 +118,16 @@ final class ControlViewController: UIViewController {
         latLonRow.distribution = .fillEqually
 
         let stack = UIStackView(arrangedSubviews: [
-            titleLabel, statusLabel, permissionCard, urlField,
+            titleLabel, statusLabel, permissionCard,
             mapView, mapCoordLabel, mapApplyButton,
             latLonRow, manualApplyButton, resultLabel,
+            urlToggleButton, urlField,
         ])
         stack.axis = .vertical
         stack.spacing = 14
         stack.setCustomSpacing(4, after: titleLabel)
         stack.setCustomSpacing(8, after: mapView)
+        stack.setCustomSpacing(8, after: urlToggleButton)
         stack.translatesAutoresizingMaskIntoConstraints = false
 
         let scrollView = UIScrollView()
@@ -186,6 +194,22 @@ final class ControlViewController: UIViewController {
         }
     }
 
+    // MARK: helper address reveal
+
+    private func setURLFieldRevealed(_ revealed: Bool) {
+        urlField.isHidden = !revealed
+        urlToggleButton.setTitle(revealed ? "helper address ▾" : "helper address ▸", for: .normal)
+    }
+
+    @objc private func urlToggleTapped() {
+        let reveal = urlField.isHidden
+        if !reveal { view.endEditing(true) }
+        UIView.animate(withDuration: 0.25) {
+            self.setURLFieldRevealed(reveal)
+            self.view.layoutIfNeeded()
+        }
+    }
+
     // MARK: applying locations
 
     @objc private func mapApplyTapped() {
@@ -209,6 +233,7 @@ final class ControlViewController: UIViewController {
         while base.hasSuffix("/") { base.removeLast() }
         guard let url = URL(string: base + "/location"), url.scheme?.hasPrefix("http") == true else {
             showResult("enter the helper URL the Mac printed, e.g. http://192.168.1.20:8755")
+            setURLFieldRevealed(true)
             return
         }
         UserDefaults.standard.set(base, forKey: Self.urlDefaultsKey)
