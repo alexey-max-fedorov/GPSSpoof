@@ -66,4 +66,66 @@ req GET /nope
 if [[ "$STATUS" == 404 ]] && has '"ok":false'; then ok "404 on unknown path"
 else fail "GET /nope -> $STATUS"; fi
 
+# 3. Non-JSON body -> 400.
+req POST /location 'not json'
+if [[ "$STATUS" == 400 ]] && has '"ok":false'; then ok "400 on malformed JSON"
+else fail "malformed JSON -> $STATUS"; fi
+
+# 4. Missing lon -> 400.
+req POST /location '{"lat": 10}'
+if [[ "$STATUS" == 400 ]]; then ok "400 on missing lon"
+else fail "missing lon -> $STATUS"; fi
+
+# 5. Out-of-range -> 400, and no slot file gets written.
+req POST /location '{"lat": 999, "lon": 0}'
+if [[ "$STATUS" == 400 ]]; then ok "400 on out-of-range lat"
+else fail "lat=999 -> $STATUS"; fi
+if [[ ! -f "$TMP/live_a.gpx" ]]; then ok "no slot written on rejection"
+else fail "live_a.gpx written despite rejection"; fi
+
+# 6. First valid apply -> live_a; file is well-formed with coords + name.
+req POST /location '{"lat": 37.3861, "lon": -122.0839}'
+if [[ "$STATUS" == 200 ]] && has '"ok":true' && has '"slot":"live_a"'; then
+  ok "first apply -> live_a"
+else fail "first apply -> $STATUS $(cat "$BODY" 2>/dev/null)"; fi
+if xmllint --noout "$TMP/live_a.gpx" 2>/dev/null; then ok "live_a.gpx well-formed"
+else fail "live_a.gpx invalid or missing"; fi
+LAT="$(xmllint --xpath 'string(//*[local-name()="wpt"]/@lat)' "$TMP/live_a.gpx" 2>/dev/null)"
+if [[ "$LAT" == "37.3861" ]]; then ok "lat survives round-trip"
+else fail "lat=$LAT (expected 37.3861)"; fi
+NAME="$(xmllint --xpath 'string(//*[local-name()="name"])' "$TMP/live_a.gpx" 2>/dev/null)"
+if [[ "$NAME" == "live_a" ]]; then ok "waypoint name == slot"
+else fail "waypoint name=$NAME (expected live_a)"; fi
+
+# 7. Second apply alternates to live_b.
+req POST /location '{"lat": 40, "lon": 50}'
+if [[ "$STATUS" == 200 ]] && has '"slot":"live_b"'; then ok "second apply -> live_b"
+else fail "second apply -> $STATUS"; fi
+
+# 8. Third apply wraps back to live_a; boundary coords accepted.
+req POST /location '{"lat": -90, "lon": 180}'
+if [[ "$STATUS" == 200 ]] && has '"slot":"live_a"'; then ok "slots wrap around"
+else fail "third apply -> $STATUS"; fi
+
+# 9. Tiny coords stay fixed-point (xsd:decimal forbids 1e-05).
+req POST /location '{"lat": 0.00001, "lon": 0}'
+if [[ "$STATUS" == 200 ]] && has '"slot":"live_b"'; then ok "tiny coords accepted"
+else fail "tiny coords -> $STATUS"; fi
+LAT="$(xmllint --xpath 'string(//*[local-name()="wpt"]/@lat)' "$TMP/live_b.gpx" 2>/dev/null)"
+case "$LAT" in
+  *[eE]*) fail "scientific notation leaked into GPX: lat=$LAT" ;;
+  "")     fail "live_b.gpx missing lat" ;;
+  *)      ok "tiny coords stay decimal ($LAT)" ;;
+esac
+
+# 10. Numeric strings accepted (parity with the Python helper's float()).
+req POST /location '{"lat": "37.5", "lon": "10"}'
+if [[ "$STATUS" == 200 ]]; then ok "string coords coerced"
+else fail "string coords -> $STATUS"; fi
+
+# 11. /health reflects the last applied slot (applies: a,b,a,b,a -> live_a).
+req GET /health
+if has '"slot":"live_a"'; then ok "/health tracks the active slot"
+else fail "/health slot: $(cat "$BODY" 2>/dev/null)"; fi
+
 exit "$FAILED"

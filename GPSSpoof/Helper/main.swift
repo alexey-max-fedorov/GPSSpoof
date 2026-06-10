@@ -90,16 +90,41 @@ func lanIP() -> String {
     return String(cString: ip)
 }
 
-_ = dryRun      // used from Task 2 on
-_ = probeMenu   // used from Task 2 on
-_ = locationsDir // used from Task 2 on
+if probeMenu {
+    let result = XcodeTrigger.runOsascript(XcodeTrigger.probeScript)
+    let stdout = result.stdout.trimmingCharacters(in: .whitespacesAndNewlines)
+    let stderr = result.stderr.trimmingCharacters(in: .whitespacesAndNewlines)
+    print(stdout.isEmpty ? stderr : stdout)
+    exit(result.status == 0 ? 0 : 1)
+}
+
+/// JSON number or numeric string (parity with the Python helper's float()).
+func coordinate(_ value: Any?) -> Double? {
+    if let number = value as? NSNumber { return number.doubleValue }
+    if let string = value as? String { return Double(string) }
+    return nil
+}
+
+let applier = Applier(locationsDir: URL(fileURLWithPath: locationsDir), dryRun: dryRun)
 
 let server: HTTPServer
 do {
-    server = try HTTPServer(port: port) { method, path, _ in
+    server = try HTTPServer(port: port) { method, path, body in
         switch (method, path) {
         case ("GET", "/health"):
-            return (200, ["ok": true, "slot": GPX.slots.last!])
+            return applier.health()
+        case ("POST", "/location"):
+            guard let object = try? JSONSerialization.jsonObject(with: body)
+                    as? [String: Any],
+                  let lat = coordinate(object["lat"]),
+                  let lon = coordinate(object["lon"]) else {
+                return (400, ["ok": false,
+                              "error": "body must be JSON: {\"lat\": .., \"lon\": ..}"])
+            }
+            guard GPX.validate(lat: lat, lon: lon) else {
+                return (400, ["ok": false, "error": "lat must be -90..90, lon -180..180"])
+            }
+            return applier.apply(lat: lat, lon: lon)
         default:
             return (404, ["ok": false, "error": "not found"])
         }
