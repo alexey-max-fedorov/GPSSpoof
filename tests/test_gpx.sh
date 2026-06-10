@@ -2,6 +2,8 @@
 # Plain-bash test runner. Exits non-zero on any failed assertion.
 set -u
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+# Capture the path before sourcing: spoof.sh unconditionally sets SCRIPT_DIR
+# (and PROJECT/LOCATIONS_DIR/HELPER_BIN) at top level, clobbering ours.
 SPOOF_SH="$SCRIPT_DIR/../spoof.sh"
 # spoof.sh is sourceable: its execution guard keeps main() from running.
 # shellcheck source=../spoof.sh
