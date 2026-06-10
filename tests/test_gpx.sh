@@ -2,8 +2,10 @@
 # Plain-bash test runner. Exits non-zero on any failed assertion.
 set -u
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-# shellcheck source=../lib/gpx.sh
-source "$SCRIPT_DIR/../lib/gpx.sh"
+SPOOF_SH="$SCRIPT_DIR/../spoof.sh"
+# spoof.sh is sourceable: its execution guard keeps main() from running.
+# shellcheck source=../spoof.sh
+source "$SPOOF_SH"
 
 FAILED=0
 assert_ok() {
@@ -48,7 +50,7 @@ TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
 OUT="$TMP/out.gpx"
 
-assert_ok "writes file"        bash -c 'source "'"$SCRIPT_DIR"'/../lib/gpx.sh" && write_gpx 37.3861 -122.0839 "MV" "'"$OUT"'"'
+assert_ok "writes file"        bash -c 'source "'"$SPOOF_SH"'" && write_gpx 37.3861 -122.0839 "MV" "'"$OUT"'"'
 assert_ok "file exists"        test -f "$OUT"
 assert_ok "is well-formed XML" xmllint --noout "$OUT"
 
@@ -60,7 +62,7 @@ NAME_FOUND=$(xmllint --xpath 'string(//*[local-name()="wpt"]/*[local-name()="nam
 [[ "$NAME_FOUND" == "MV" ]] && echo "  ok   - name round-trips" || { echo "  FAIL - name ($NAME_FOUND)"; FAILED=1; }
 
 # XML escaping: ampersand and angle brackets in name must not break the document
-bash -c 'source "'"$SCRIPT_DIR"'/../lib/gpx.sh" && write_gpx 0 0 "A & B <c>" "'"$OUT"'"'
+bash -c 'source "'"$SPOOF_SH"'" && write_gpx 0 0 "A & B <c>" "'"$OUT"'"'
 assert_ok "well-formed after escaping" xmllint --noout "$OUT"
 ESC_NAME=$(xmllint --xpath 'string(//*[local-name()="wpt"]/*[local-name()="name"])' "$OUT")
 [[ "$ESC_NAME" == "A & B <c>" ]] && echo "  ok   - name escaped+decoded" || { echo "  FAIL - escaped name ($ESC_NAME)"; FAILED=1; }
