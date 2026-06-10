@@ -32,6 +32,10 @@ final class ControlViewController: UIViewController {
     private let manualApplyButton = Theme.outlineButton(title: "Apply typed coordinates")
     private let resultLabel = UILabel()
 
+    // Index 0 = v2 (default). v1 is the escape hatch if the session check
+    // ever misfires — it never triggers a rebuild.
+    private let modeControl = UISegmentedControl(items: ["v2 · self-healing", "v1 · raw clicks"])
+
     /// Set by AppDelegate; triggers the system when-in-use permission prompt.
     var onRequestPermission: (() -> Void)?
     private var authorizationStatus: CLAuthorizationStatus = .notDetermined
@@ -39,6 +43,7 @@ final class ControlViewController: UIViewController {
     private static let urlDefaultsKey = "GPSSpoofHelperURL"
     private static let lastLatKey = "GPSSpoofLastLat"
     private static let lastLonKey = "GPSSpoofLastLon"
+    private static let modeDefaultsKey = "GPSSpoofApplyMode"
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -112,6 +117,20 @@ final class ControlViewController: UIViewController {
         resultLabel.font = .monospacedSystemFont(ofSize: 13, weight: .regular)
         resultLabel.textColor = Theme.textSecondary
 
+        modeControl.selectedSegmentIndex =
+            UserDefaults.standard.string(forKey: Self.modeDefaultsKey) == "v1" ? 1 : 0
+        modeControl.backgroundColor = Theme.fieldSurface
+        modeControl.selectedSegmentTintColor = Theme.gold
+        modeControl.setTitleTextAttributes([
+            .foregroundColor: Theme.textSecondary,
+            .font: UIFont.monospacedSystemFont(ofSize: 12, weight: .regular),
+        ], for: .normal)
+        modeControl.setTitleTextAttributes([
+            .foregroundColor: UIColor.black,
+            .font: UIFont.monospacedSystemFont(ofSize: 12, weight: .medium),
+        ], for: .selected)
+        modeControl.addTarget(self, action: #selector(modeChanged), for: .valueChanged)
+
         let latLonRow = UIStackView(arrangedSubviews: [latField, lonField])
         latLonRow.axis = .horizontal
         latLonRow.spacing = 12
@@ -121,6 +140,7 @@ final class ControlViewController: UIViewController {
             titleLabel, statusLabel, permissionCard,
             mapView, mapCoordLabel, mapApplyButton,
             latLonRow, manualApplyButton, resultLabel,
+            modeControl,
             urlToggleButton, urlField,
         ])
         stack.axis = .vertical
@@ -210,6 +230,17 @@ final class ControlViewController: UIViewController {
         }
     }
 
+    // MARK: switch method
+
+    /// "v1" = blind menu clicks (original), "v2" = session check + self-heal.
+    private var applyMode: String {
+        modeControl.selectedSegmentIndex == 1 ? "v1" : "v2"
+    }
+
+    @objc private func modeChanged() {
+        UserDefaults.standard.set(applyMode, forKey: Self.modeDefaultsKey)
+    }
+
     // MARK: applying locations
 
     @objc private func mapApplyTapped() {
@@ -242,7 +273,8 @@ final class ControlViewController: UIViewController {
         request.httpMethod = "POST"
         request.timeoutInterval = 10
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.httpBody = try? JSONSerialization.data(withJSONObject: ["lat": lat, "lon": lon])
+        request.httpBody = try? JSONSerialization.data(
+            withJSONObject: ["lat": lat, "lon": lon, "mode": applyMode])
 
         setApplying(true)
         showResult("applying…")
