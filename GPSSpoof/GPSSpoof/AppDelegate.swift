@@ -13,6 +13,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate, CLLocationManagerDelegate
     var window: UIWindow?
     private let locationManager = CLLocationManager()
     private let controlVC = ControlViewController()
+    private var keepaliveRunning = false
 
     func application(
         _ application: UIApplication,
@@ -37,20 +38,44 @@ class AppDelegate: UIResponder, UIApplicationDelegate, CLLocationManagerDelegate
         locationManager.desiredAccuracy = kCLLocationAccuracyBest
         locationManager.pausesLocationUpdatesAutomatically = false
         locationManager.activityType = .otherNavigation
-        locationManager.requestWhenInUseAuthorization()
+        // Seed from the cached status instead of waiting for the async
+        // delegate callback, so the permission card never flashes (or
+        // sticks) when access was already granted.
+        applyAuthorization()
         return true
     }
 
+    func applicationDidBecomeActive(_ application: UIApplication) {
+        // Re-sync on every foreground: covers Settings round-trips and any
+        // missed delegate callback. This is also the reliable moment to
+        // prompt — the system alert can be dropped when requested before
+        // the app is active.
+        applyAuthorization()
+        if locationManager.authorizationStatus == .notDetermined {
+            locationManager.requestWhenInUseAuthorization()
+        }
+    }
+
     func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
-        controlVC.updateAuthorization(manager.authorizationStatus)
-        switch manager.authorizationStatus {
+        applyAuthorization()
+    }
+
+    private func applyAuthorization() {
+        let status = locationManager.authorizationStatus
+        controlVC.updateAuthorization(status)
+        switch status {
         case .authorizedWhenInUse, .authorizedAlways:
+            // Idempotent: applyAuthorization runs on every foreground, and
+            // re-arming would stomp the "reporting…" status text.
+            guard !keepaliveRunning else { break }
+            keepaliveRunning = true
             // Requires the `location` entry in UIBackgroundModes, otherwise
             // this assignment raises an exception.
-            manager.allowsBackgroundLocationUpdates = true
-            manager.startUpdatingLocation()
+            locationManager.allowsBackgroundLocationUpdates = true
+            locationManager.startUpdatingLocation()
             setStatus("keepalive armed\nwaiting for first fix…")
         case .denied, .restricted:
+            keepaliveRunning = false
             setStatus("location permission denied —\nthe session will end when the phone locks.")
         case .notDetermined:
             break
