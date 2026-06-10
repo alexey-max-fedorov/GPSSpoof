@@ -126,6 +126,13 @@ Notes:
   faster and never triggers a rebuild, but if the session has died it
   silently does nothing. The choice is sent per request as the `"mode"`
   field of `POST /location` (missing = v2).
+- The **spoofing** toggle under the status text turns the simulation on
+  and off without ending the session: **on** (gold) re-applies the last
+  applied location, **off** (gray) clicks Xcode's *Don't Simulate
+  Location* so the device returns to its real GPS. On launch the app sets
+  the toggle by comparing the device's reported location to that saved
+  target — within 100 m reads as on. Stopping is `POST /stop` on the
+  helper; a dead session counts as already stopped.
 - The first Apply triggers iOS's one-time **Local Network** permission prompt
   on the phone — allow it.
 - Stopping the helper (Ctrl-C) does not end the spoof session; it only stops
