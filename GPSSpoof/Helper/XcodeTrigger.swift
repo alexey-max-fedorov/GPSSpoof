@@ -2,14 +2,30 @@ import Foundation
 
 /// UI-scripts Xcode (Debug > Simulate Location > <slot>) via osascript.
 /// Requires macOS Accessibility permission for the terminal app running the
-/// helper. Each click briefly brings Xcode frontmost.
+/// helper. Each click briefly opens the Debug menu on the Mac's screen.
+///
+/// The Simulate Location submenu is populated lazily: its items do not exist
+/// in the accessibility tree until the menu chain is physically opened, so a
+/// one-shot nested click ("click menu item X of menu 1 of menu item Y ...")
+/// fails with "Can't get menu item". Open the chain step by step instead.
+/// Verified live on Xcode 26.5.
 enum XcodeTrigger {
     static func clickScript(slot: String) -> String {
         """
         tell application "System Events"
           tell process "Xcode"
             set frontmost to true
-            click menu item "\(slot)" of menu 1 of menu item "Simulate Location" of menu 1 of menu bar item "Debug" of menu bar 1
+            try
+              click menu bar item "Debug" of menu bar 1
+              delay 0.4
+              click menu item "Simulate Location" of menu 1 of menu bar item "Debug" of menu bar 1
+              delay 0.4
+              click menu item "\(slot)" of menu 1 of menu item "Simulate Location" of menu 1 of menu bar item "Debug" of menu bar 1
+            on error errMsg number errNum
+              key code 53
+              key code 53
+              error errMsg number errNum
+            end try
           end tell
         end tell
         """
@@ -19,7 +35,20 @@ enum XcodeTrigger {
         tell application "System Events"
           tell process "Xcode"
             set frontmost to true
-            get name of every menu item of menu 1 of menu item "Simulate Location" of menu 1 of menu bar item "Debug" of menu bar 1
+            try
+              click menu bar item "Debug" of menu bar 1
+              delay 0.4
+              click menu item "Simulate Location" of menu 1 of menu bar item "Debug" of menu bar 1
+              delay 0.4
+              set itemNames to name of every menu item of menu 1 of menu item "Simulate Location" of menu 1 of menu bar item "Debug" of menu bar 1
+              key code 53
+              key code 53
+              return itemNames
+            on error errMsg number errNum
+              key code 53
+              key code 53
+              error errMsg number errNum
+            end try
           end tell
         end tell
         """
