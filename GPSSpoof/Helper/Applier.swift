@@ -4,6 +4,11 @@ import Foundation
 /// files and (unless dry-run) clicks Xcode's Simulate Location menu.
 /// The slot only advances when the whole apply succeeds, so a failed menu
 /// click retries the same slot on the next attempt.
+///
+/// Xcode leaves the Simulate Location menu clickable after the debug session
+/// dies (e.g. the app was quit on the phone), so every apply first checks
+/// that a session is actually running; if not, it writes the coords into
+/// target.gpx (the scheme's startup GPX) and asks Xcode to run again.
 final class Applier {
     private let locationsDir: URL
     private let dryRun: Bool
@@ -24,6 +29,16 @@ final class Applier {
     func apply(lat: Double, lon: Double) -> (status: Int, json: [String: Any]) {
         lock.lock()
         defer { lock.unlock() }
+        if !dryRun {
+            let session = XcodeTrigger.debugSessionIsRunning()
+            if let failure = session.failure {
+                print("  FAIL - \(failure.message)")
+                return (failure.status, ["ok": false, "error": failure.message])
+            }
+            if !session.running {
+                return relaunch(lat: lat, lon: lon)
+            }
+        }
         let next = GPX.nextSlot(after: slot)
         let file = locationsDir.appendingPathComponent("\(next).gpx")
         do {
@@ -41,5 +56,30 @@ final class Applier {
         slot = next
         print("  ok   - applied \(GPX.formatCoord(lat)), \(GPX.formatCoord(lon)) via \(next)")
         return (200, ["ok": true, "slot": next])
+    }
+
+    /// Dead session: slot clicks would silently no-op, so boot a fresh Run
+    /// instead. The coords go into target.gpx — the GPX the shared scheme
+    /// references — so the new session starts at the requested location.
+    private func relaunch(lat: Double, lon: Double) -> (status: Int, json: [String: Any]) {
+        let file = locationsDir.appendingPathComponent("target.gpx")
+        do {
+            try GPX.make(lat: lat, lon: lon, name: "target")
+                .write(to: file, atomically: true, encoding: .utf8)
+        } catch {
+            let message = "cannot write \(file.path): \(error.localizedDescription)"
+            print("  FAIL - \(message)")
+            return (500, ["ok": false, "error": message])
+        }
+        if let failure = XcodeTrigger.relaunchDebugSession() {
+            print("  FAIL - \(failure.message)")
+            return (failure.status, ["ok": false, "error": failure.message])
+        }
+        // Fresh session boots with target.gpx selected, so both slots are
+        // "different items" again; restart the alternation from the top.
+        slot = GPX.slots.last!
+        print("  ok   - session was dead; relaunching at "
+            + "\(GPX.formatCoord(lat)), \(GPX.formatCoord(lon)) via target.gpx")
+        return (200, ["ok": true, "relaunched": true])
     }
 }

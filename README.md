@@ -30,7 +30,7 @@ The debug connection itself has hard limits that no app or scheme setting can re
 | USB cable unplugged after launch | Yes (session continues over WiFi) |
 | WiFi network switched mid-session (incl. joining/leaving a hotspot) | No — the wireless debug tunnel tears down |
 | Mac sleeps or Xcode quits | No |
-| iOS terminates the app (force-quit, severe memory pressure) | No |
+| iOS terminates the app (force-quit, severe memory pressure) | No — but if the helper is running, the next Apply from the phone app restarts the session automatically |
 | iPhone reboots | No (always restores the real location) |
 
 ### Stability checklist, in order of impact
@@ -103,14 +103,22 @@ alternating GPX slots (`live_a.gpx` / `live_b.gpx`) and clicks
 re-reads the file. Two slots are used because Xcode caches a re-selected GPX
 file.
 
-One-time Mac setup: grant **Accessibility** permission to the terminal app
-running the helper (System Settings ▸ Privacy & Security ▸ Accessibility).
-The helper returns a clear error to the phone if the permission is missing.
+One-time Mac setup: grant the terminal app running the helper
+**Accessibility** permission (System Settings ▸ Privacy & Security ▸
+Accessibility) and **Automation** permission for Xcode (Privacy & Security ▸
+Automation — macOS prompts on first use). The helper returns a clear error
+to the phone if either permission is missing.
 
 Notes:
-- Each Apply briefly brings Xcode to the front and opens its Debug menu on
-  the Mac (the Simulate Location submenu only exists while the menu chain is
-  open, so the helper clicks through it step by step).
+- Each Apply briefly brings Xcode to the front and opens its Product and
+  Debug menus on the Mac (Product ▸ Stop's enabled state tells the helper
+  the session is alive, and the Simulate Location submenu only exists while
+  the menu chain is open, so the helper clicks through it step by step).
+- If the debug session has died — most commonly because the GPSSpoof app was
+  quit on the phone — Apply restarts it: the helper writes the coords into
+  `target.gpx` and tells Xcode to run again. The app reinstalls and
+  relaunches on the phone in roughly 30 seconds; wait for that before
+  applying again.
 - The first Apply triggers iOS's one-time **Local Network** permission prompt
   on the phone — allow it.
 - Stopping the helper (Ctrl-C) does not end the spoof session; it only stops

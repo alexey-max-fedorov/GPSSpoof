@@ -258,8 +258,17 @@ final class ControlViewController: UIViewController {
                 return
             }
             if body["ok"] as? Bool == true {
-                let slot = body["slot"] as? String ?? "?"
-                self?.showResult(String(format: "applied %.5f, %.5f (slot %@)", lat, lon, slot))
+                if body["relaunched"] as? Bool == true {
+                    // The Mac session had died (e.g. this app was quit);
+                    // the helper restarted it with these coords in target.gpx.
+                    // Xcode will reinstall and relaunch this app shortly.
+                    self?.showResult(String(format:
+                        "the Mac session had ended — restarting it\nat %.5f, %.5f. Xcode is rebuilding;\nthis app will relaunch itself in ~30s.",
+                        lat, lon))
+                } else {
+                    let slot = body["slot"] as? String ?? "?"
+                    self?.showResult(String(format: "applied %.5f, %.5f (slot %@)", lat, lon, slot))
+                }
                 self?.locationApplied(lat: lat, lon: lon)
             } else {
                 self?.showResult(body["error"] as? String ?? "helper reported an error")

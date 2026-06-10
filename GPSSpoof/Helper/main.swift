@@ -23,7 +23,7 @@ func printUsage() {
     Usage: GPSSpoofHelper [--port <n>] [--dry-run] [--probe-menu] [--locations-dir <path>]
 
       --port           listen port (default \(defaultPort); 0 = ephemeral)
-      --dry-run        write GPX slots but skip the Xcode menu click
+      --dry-run        write GPX slots but skip all Xcode interaction
       --probe-menu     print Xcode's Simulate Location menu items and exit
       --locations-dir  directory holding the live-slot GPX files
                        (default: ./GPSSpoof/GPSSpoof/locations)
@@ -139,8 +139,9 @@ server.start { boundPort in
     print("  Enter this URL in the GPSSpoof app on the iPhone:")
     print("    http://\(lanIP()):\(boundPort)")
     print("  listening on port \(boundPort)")
-    print("  Requires Accessibility permission for this terminal app")
-    print("  (System Settings > Privacy & Security > Accessibility).")
+    print("  Requires this terminal app to have Accessibility permission and")
+    print("  Automation permission for Xcode (System Settings >")
+    print("  Privacy & Security > Accessibility / Automation).")
     print("  Ctrl-C to stop. Stopping does NOT end the spoof session.")
     print(String(repeating: "=", count: 60))
 }
