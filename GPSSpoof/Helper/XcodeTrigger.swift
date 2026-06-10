@@ -22,6 +22,8 @@ enum XcodeTrigger {
     /// action is in flight — opening the menu makes AppKit revalidate it.
     /// Prints "dead" when no session is running, "clicked" after a
     /// successful slot click.
+    /// Also reused for stopping: "Don't Simulate Location" sits in the same
+    /// submenu, so passing it as the slot stops the simulation.
     static func applyScript(slot: String) -> String {
         """
         tell application "System Events"
@@ -151,7 +153,25 @@ enum XcodeTrigger {
     /// Check the debug session and click Debug > Simulate Location > <slot>
     /// in Xcode, as a single deterministic UI-scripting sequence.
     static func applySimulateLocation(slot: String) -> MenuApplyResult {
-        let result = runOsascript(applyScript(slot: slot))
+        mapMenuResult(runOsascript(applyScript(slot: slot)), item: slot)
+    }
+
+    /// The exact stop item name Xcode shows. The apostrophe is typographic
+    /// (U+2019) — an ASCII ' makes the click miss the item.
+    static let dontSimulateItem = "Don\u{2019}t Simulate Location"
+
+    /// Stop simulating: same submenu, same session-checked script. A dead
+    /// session reports .sessionDead — for stopping that means there was
+    /// nothing to stop.
+    static func stopSimulateLocation() -> MenuApplyResult {
+        mapMenuResult(runOsascript(applyScript(slot: dontSimulateItem)),
+                      item: dontSimulateItem)
+    }
+
+    private static func mapMenuResult(
+        _ result: (status: Int32, stdout: String, stderr: String),
+        item: String
+    ) -> MenuApplyResult {
         if result.status == 0 {
             let answer = result.stdout.trimmingCharacters(in: .whitespacesAndNewlines)
             return answer == "dead" ? .sessionDead : .clicked
@@ -163,7 +183,7 @@ enum XcodeTrigger {
         }
         if lowered.contains("menu item") {
             return .failed(status: 409, message:
-                "Xcode has no 'Simulate Location > \(slot)' menu item. Is the "
+                "Xcode has no 'Simulate Location > \(item)' menu item. Is the "
                 + "debug session running? On the Mac, run "
                 + "'./spoof.sh helper --probe-menu' to see what Xcode actually lists.")
         }

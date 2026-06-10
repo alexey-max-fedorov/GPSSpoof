@@ -74,6 +74,30 @@ final class Applier {
         return (200, ["ok": true, "slot": next])
     }
 
+    /// Stop simulating: click "Don't Simulate Location" so the device
+    /// returns to its real GPS. The debug session stays alive. The slot
+    /// pointer is untouched — after stopping, no slot is checked in the
+    /// menu, so the next apply's alternation works regardless.
+    func stop() -> (status: Int, json: [String: Any]) {
+        lock.lock()
+        defer { lock.unlock() }
+        if !dryRun {
+            switch XcodeTrigger.stopSimulateLocation() {
+            case .clicked:
+                break
+            case .sessionDead:
+                // Nothing was being simulated over a dead session anyway.
+                print("  ok   - stop requested; session already dead")
+                return (200, ["ok": true, "spoofing": false, "sessionDead": true])
+            case .failed(let status, let message):
+                print("  FAIL - \(message)")
+                return (status, ["ok": false, "error": message])
+            }
+        }
+        print("  ok   - spoofing stopped (Don't Simulate Location)")
+        return (200, ["ok": true, "spoofing": false])
+    }
+
     /// Dead session: slot clicks would silently no-op, so boot a fresh Run
     /// instead. The coords go into target.gpx — the GPX the shared scheme
     /// references — so the new session starts at the requested location.

@@ -130,6 +130,8 @@ do {
                 return (400, ["ok": false, "error": "mode must be \"v1\" or \"v2\""])
             }
             return applier.apply(lat: lat, lon: lon, mode: mode)
+        case ("POST", "/stop"):
+            return applier.stop()
         default:
             return (404, ["ok": false, "error": "not found"])
         }

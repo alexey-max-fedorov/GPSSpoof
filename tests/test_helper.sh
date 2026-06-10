@@ -146,4 +146,15 @@ req GET /health
 if has '"slot":"live_a"'; then ok "slot unchanged after rejected mode"
 else fail "/health slot after bad mode: $(cat "$BODY" 2>/dev/null)"; fi
 
+# 15. POST /stop in dry-run -> 200, spoofing reported off. Body is ignored.
+req POST /stop '{}'
+if [[ "$STATUS" == 200 ]] && has '"ok":true' && has '"spoofing":false'; then
+  ok "POST /stop"
+else fail "POST /stop -> $STATUS $(cat "$BODY" 2>/dev/null)"; fi
+
+# 16. Stopping does not advance the slot pointer (still live_a after test 14).
+req GET /health
+if has '"slot":"live_a"'; then ok "slot unchanged after stop"
+else fail "/health slot after stop: $(cat "$BODY" 2>/dev/null)"; fi
+
 exit "$FAILED"
