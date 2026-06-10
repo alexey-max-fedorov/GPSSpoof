@@ -36,6 +36,16 @@ final class ControlViewController: UIViewController {
     // ever misfires — it never triggers a rebuild.
     private let modeControl = UISegmentedControl(items: ["v2 · self-healing", "v1 · raw clicks"])
 
+    private let spoofToggleButton = UIButton(type: .system)
+    private var spoofingOn = false
+    // Auto-detect drives the toggle only until the user (or an apply) takes
+    // over; after that it reflects explicit actions, so a stale GPS fix
+    // can't flip it back mid-session.
+    private var spoofingStateLocked = false
+    /// Simulated fixes land exactly on the target; real GPS practically
+    /// never does unless you're physically there.
+    private static let targetMatchMeters: CLLocationDistance = 100
+
     /// Set by AppDelegate; triggers the system when-in-use permission prompt.
     var onRequestPermission: (() -> Void)?
     private var authorizationStatus: CLAuthorizationStatus = .notDetermined
@@ -131,13 +141,20 @@ final class ControlViewController: UIViewController {
         ], for: .selected)
         modeControl.addTarget(self, action: #selector(modeChanged), for: .valueChanged)
 
+        spoofToggleButton.titleLabel?.font = .systemFont(ofSize: 16, weight: .semibold)
+        spoofToggleButton.layer.cornerRadius = 10
+        spoofToggleButton.layer.borderWidth = 1
+        spoofToggleButton.heightAnchor.constraint(equalToConstant: 48).isActive = true
+        spoofToggleButton.addTarget(self, action: #selector(spoofToggleTapped), for: .touchUpInside)
+        renderSpoofToggle()
+
         let latLonRow = UIStackView(arrangedSubviews: [latField, lonField])
         latLonRow.axis = .horizontal
         latLonRow.spacing = 12
         latLonRow.distribution = .fillEqually
 
         let stack = UIStackView(arrangedSubviews: [
-            titleLabel, statusLabel, permissionCard,
+            titleLabel, statusLabel, spoofToggleButton, permissionCard,
             mapView, mapCoordLabel, mapApplyButton,
             latLonRow, manualApplyButton, resultLabel,
             modeControl,
@@ -241,6 +258,99 @@ final class ControlViewController: UIViewController {
         UserDefaults.standard.set(applyMode, forKey: Self.modeDefaultsKey)
     }
 
+    // MARK: spoofing toggle
+
+    private func renderSpoofToggle() {
+        if spoofingOn {
+            spoofToggleButton.setTitle("spoofing · on", for: .normal)
+            spoofToggleButton.setTitleColor(.black, for: .normal)
+            spoofToggleButton.backgroundColor = Theme.gold
+            spoofToggleButton.layer.borderColor = Theme.gold.cgColor
+        } else {
+            spoofToggleButton.setTitle("spoofing · off", for: .normal)
+            spoofToggleButton.setTitleColor(Theme.textSecondary, for: .normal)
+            spoofToggleButton.backgroundColor = Theme.fieldSurface
+            spoofToggleButton.layer.borderColor = Theme.surfaceBorder.cgColor
+        }
+    }
+
+    private func setSpoofing(on: Bool) {
+        spoofingOn = on
+        renderSpoofToggle()
+    }
+
+    /// The last successfully applied coords — what "spoofing on" re-applies.
+    private func storedTarget() -> (lat: Double, lon: Double)? {
+        let defaults = UserDefaults.standard
+        guard let lat = defaults.object(forKey: Self.lastLatKey) as? Double,
+              let lon = defaults.object(forKey: Self.lastLonKey) as? Double else {
+            return nil
+        }
+        return (lat, lon)
+    }
+
+    /// Called by AppDelegate with every keepalive fix. Until the user
+    /// touches the toggle (or applies a location), the toggle mirrors
+    /// reality: on when the device reports the saved target, off otherwise.
+    func deviceLocationUpdated(_ coordinate: CLLocationCoordinate2D) {
+        DispatchQueue.main.async {
+            guard !self.spoofingStateLocked, let target = self.storedTarget() else { return }
+            let fix = CLLocation(latitude: coordinate.latitude, longitude: coordinate.longitude)
+            let goal = CLLocation(latitude: target.lat, longitude: target.lon)
+            self.setSpoofing(on: fix.distance(from: goal) <= Self.targetMatchMeters)
+        }
+    }
+
+    @objc private func spoofToggleTapped() {
+        view.endEditing(true)
+        spoofingStateLocked = true
+        if spoofingOn {
+            stopSpoofing()
+        } else if let target = storedTarget() {
+            apply(lat: target.lat, lon: target.lon)
+        } else {
+            showResult("no target location saved yet —\napply a location once first")
+        }
+    }
+
+    private func stopSpoofing() {
+        guard let url = helperEndpoint("/stop") else {
+            showResult("enter the helper URL the Mac printed, e.g. http://192.168.1.20:8755")
+            setURLFieldRevealed(true)
+            return
+        }
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.timeoutInterval = 10
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.httpBody = Data("{}".utf8)
+
+        setApplying(true)
+        showResult("stopping…")
+        URLSession.shared.dataTask(with: request) { [weak self] data, _, error in
+            DispatchQueue.main.async { self?.setApplying(false) }
+            if let error = error {
+                self?.showResult("could not reach helper: \(error.localizedDescription)\nIs spoof.sh --listen running on the Mac?")
+                return
+            }
+            guard let data = data,
+                  let body = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+                self?.showResult("helper sent an unreadable reply")
+                return
+            }
+            if body["ok"] as? Bool == true {
+                DispatchQueue.main.async { self?.setSpoofing(on: false) }
+                if body["sessionDead"] as? Bool == true {
+                    self?.showResult("the Mac session wasn't running —\nnothing was being spoofed")
+                } else {
+                    self?.showResult("spoofing off — the device is back\non its real GPS location")
+                }
+            } else {
+                self?.showResult(body["error"] as? String ?? "helper reported an error")
+            }
+        }.resume()
+    }
+
     // MARK: applying locations
 
     @objc private func mapApplyTapped() {
@@ -259,15 +369,24 @@ final class ControlViewController: UIViewController {
         apply(lat: lat, lon: lon)
     }
 
-    private func apply(lat: Double, lon: Double) {
+    /// Normalizes the saved/typed base URL and appends an endpoint path.
+    /// Persists the base so the field can stay tucked away next launch.
+    private func helperEndpoint(_ path: String) -> URL? {
         var base = (urlField.text ?? "").trimmingCharacters(in: .whitespaces)
         while base.hasSuffix("/") { base.removeLast() }
-        guard let url = URL(string: base + "/location"), url.scheme?.hasPrefix("http") == true else {
+        guard let url = URL(string: base + path), url.scheme?.hasPrefix("http") == true else {
+            return nil
+        }
+        UserDefaults.standard.set(base, forKey: Self.urlDefaultsKey)
+        return url
+    }
+
+    private func apply(lat: Double, lon: Double) {
+        guard let url = helperEndpoint("/location") else {
             showResult("enter the helper URL the Mac printed, e.g. http://192.168.1.20:8755")
             setURLFieldRevealed(true)
             return
         }
-        UserDefaults.standard.set(base, forKey: Self.urlDefaultsKey)
 
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
@@ -309,16 +428,18 @@ final class ControlViewController: UIViewController {
     }
 
     private func setApplying(_ inFlight: Bool) {
-        mapApplyButton.isEnabled = !inFlight
-        manualApplyButton.isEnabled = !inFlight
-        mapApplyButton.alpha = inFlight ? 0.5 : 1
-        manualApplyButton.alpha = inFlight ? 0.5 : 1
+        for button in [mapApplyButton, manualApplyButton, spoofToggleButton] {
+            button.isEnabled = !inFlight
+            button.alpha = inFlight ? 0.5 : 1
+        }
     }
 
     private func locationApplied(lat: Double, lon: Double) {
         DispatchQueue.main.async {
             UserDefaults.standard.set(lat, forKey: Self.lastLatKey)
             UserDefaults.standard.set(lon, forKey: Self.lastLonKey)
+            self.spoofingStateLocked = true
+            self.setSpoofing(on: true)
             self.latField.text = String(format: "%.5f", lat)
             self.lonField.text = String(format: "%.5f", lon)
             let target = CLLocationCoordinate2D(latitude: lat, longitude: lon)

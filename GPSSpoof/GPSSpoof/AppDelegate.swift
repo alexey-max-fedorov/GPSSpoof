@@ -86,6 +86,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate, CLLocationManagerDelegate
 
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         guard let fix = locations.last else { return }
+        controlVC.deviceLocationUpdated(fix.coordinate)
         setStatus(String(
             format: "reporting\n%.5f, %.5f\n\nkeep this app installed and running;\nthe blue location indicator means\nthe session is alive",
             fix.coordinate.latitude, fix.coordinate.longitude
