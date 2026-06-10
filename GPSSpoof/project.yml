@@ -3,6 +3,7 @@ options:
   bundleIdPrefix: com.local
   deploymentTarget:
     iOS: "15.0"
+    macOS: "13.0"
   createIntermediateGroups: true
   generateEmptyDirectories: true
 settings:
@@ -46,5 +47,20 @@ targets:
         TARGETED_DEVICE_FAMILY: "1,2"
     # We manage the scheme manually so xcodegen does not overwrite our
     # custom LocationScenario reference. See xcschemes/GPSSpoof.xcscheme.
+    scheme: ~
+  # Mac-side phone-control helper. A plain command-line tool: listens for
+  # HTTP POSTs from the iPhone app and re-points Xcode's running location
+  # simulation. Built by spoof.sh via `xcodebuild -target GPSSpoofHelper`;
+  # code signing is disabled because it only ever runs on this Mac.
+  GPSSpoofHelper:
+    type: tool
+    platform: macOS
+    sources:
+      - path: Helper
+    settings:
+      base:
+        CODE_SIGNING_ALLOWED: "NO"
+        DEVELOPMENT_TEAM: ""
+        PRODUCT_NAME: GPSSpoofHelper
     scheme: ~
 schemes: {}
