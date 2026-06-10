@@ -30,6 +30,10 @@ targets:
           - arm64
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
+        # Without a launch-screen entry iOS runs the app letterboxed in
+        # legacy compatibility mode instead of giving it the full screen.
+        # An empty dict opts into a plain full-screen launch.
+        UILaunchScreen: {}
         # Background location keepalive: keeps the debuggee process (and with
         # it the Xcode location-simulation session) alive while the phone is
         # locked. Plain Info.plist keys — no paid-account entitlement needed.
