@@ -93,9 +93,10 @@ Start the session with the helper:
 `--listen` opens Xcode as usual, then builds and runs `GPSSpoofHelper` — a
 small Swift command-line tool that lives in the same Xcode project — in the
 foreground. The helper prints a URL like `http://192.168.1.20:8755` — enter
-it once in the GPSSpoof app on the phone (it is remembered). Type new
-coordinates and tap **Apply location**: the helper writes them into one of
-two alternating GPX slots (`live_a.gpx` / `live_b.gpx`) and clicks
+it once in the GPSSpoof app on the phone (it is remembered). Pan the embedded
+map and tap **Set location to map center**, or type exact coordinates and tap
+**Apply typed coordinates**: the helper writes them into one of two
+alternating GPX slots (`live_a.gpx` / `live_b.gpx`) and clicks
 **Debug ▸ Simulate Location** in Xcode for you, so the running session
 re-reads the file. Two slots are used because Xcode caches a re-selected GPX
 file.
@@ -105,7 +106,9 @@ running the helper (System Settings ▸ Privacy & Security ▸ Accessibility).
 The helper returns a clear error to the phone if the permission is missing.
 
 Notes:
-- Each Apply briefly brings Xcode to the front on the Mac.
+- Each Apply briefly brings Xcode to the front and opens its Debug menu on
+  the Mac (the Simulate Location submenu only exists while the menu chain is
+  open, so the helper clicks through it step by step).
 - The first Apply triggers iOS's one-time **Local Network** permission prompt
   on the phone — allow it.
 - Stopping the helper (Ctrl-C) does not end the spoof session; it only stops
@@ -123,7 +126,7 @@ Reboot your iPhone to restore normal location reporting.
 - **"no iPhone detected"** — Connect via USB, trust the computer on the iPhone, unlock the device, and retry. Check with `xcrun xctrace list devices`.
 - **Signing error** — Open the project in Xcode and set the team manually.
 - **Location does not update** — Verify the scheme is set to `GPSSpoof`, iPhone is selected, and "Allow Location Simulation" is enabled with `target.gpx` in the scheme editor.
-- **Spoof dies when the phone locks** — The location permission was probably denied or never requested. Open Settings > Privacy & Security > Location Services > GPSSpoof and select "While Using the App", then run again. The app shows its keepalive status on screen.
+- **Spoof dies when the phone locks** — The location permission was probably denied or never requested. Tap the gold permission button in the app (it requests access, or deep-links to Settings if access was denied), then run again. The app shows its keepalive status on screen.
 - **Simulation ends unexpectedly** — Usually a network event: the Mac or iPhone changed WiFi networks, or the Mac slept. See [Persistence](#persistence) for the stability checklist.
 - **App won't launch after a week (free Apple ID)** — The 7-day provisioning profile expired. Press Cmd-R in Xcode to re-install.
 
