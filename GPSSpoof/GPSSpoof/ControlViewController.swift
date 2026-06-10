@@ -1,6 +1,6 @@
 import UIKit
 
-// Remote control for the Mac-side helper (lib/location_helper.py): POSTs new
+// Remote control for the Mac-side helper (GPSSpoofHelper): POSTs new
 // coordinates to it, and the helper re-points the running Xcode simulation.
 // Also displays the keepalive status that AppDelegate feeds in via showStatus.
 final class ControlViewController: UIViewController {

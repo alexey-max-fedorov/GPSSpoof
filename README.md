@@ -58,7 +58,7 @@ Note for free Apple ID users: the provisioning profile expires after 7 days, aft
 ## First-time setup
 
 ```bash
-./setup.sh
+./spoof.sh setup
 ```
 
 Then open `GPSSpoof/GPSSpoof.xcodeproj` in Xcode once. Select your team under Signing & Capabilities to complete the device signing process. Copy the 10-character Team ID and run:
@@ -67,7 +67,7 @@ Then open `GPSSpoof/GPSSpoof.xcodeproj` in Xcode once. Select your team under Si
 export TEAM_ID=XXXXXXXXXX
 ```
 
-(Add this to your shell profile for convenience.)
+(Add this to your shell profile. Re-runs of `./spoof.sh setup` regenerate the Xcode project, and the signing team is only preserved when TEAM_ID is set.)
 
 ## Usage
 
@@ -75,7 +75,7 @@ export TEAM_ID=XXXXXXXXXX
 ./spoof.sh --lat 37.3861 --lon -122.0839 --name "Mountain View"
 ```
 
-The script updates the GPX file and opens the project in Xcode. **In Xcode, select your iPhone as the run destination and press Cmd-R.** On the first run, tap **Allow While Using App** when the app requests location access — this arms the background keepalive that lets the session survive screen lock. Once the status bar shows the app is running on the device and the app displays the spoofed coordinates, you may unplug the USB cable. Do not stop the session in Xcode.
+The script updates the GPX file and opens the project in Xcode. **In Xcode, select your iPhone as the run destination and press Cmd-R.** (Keep the scheme dropdown on `GPSSpoof` — `GPSSpoofHelper` is the Mac-side helper tool, not the app.) On the first run, tap **Allow While Using App** when the app requests location access — this arms the background keepalive that lets the session survive screen lock. Once the status bar shows the app is running on the device and the app displays the spoofed coordinates, you may unplug the USB cable. Do not stop the session in Xcode.
 
 The simulation applies system-wide during the active debug session. See [Persistence](#persistence) for how to keep the session alive.
 
@@ -90,14 +90,15 @@ Start the session with the helper:
 ./spoof.sh --lat 37.3861 --lon -122.0839 --listen
 ```
 
-`--listen` opens Xcode as usual, then runs a small helper
-(`lib/location_helper.py`) in the foreground. The helper prints a URL like
-`http://192.168.1.20:8755` — enter it once in the GPSSpoof app on the phone
-(it is remembered). Type new coordinates and tap **Apply location**: the
-helper writes them into one of two alternating GPX slots (`live_a.gpx` /
-`live_b.gpx`) and clicks **Debug ▸ Simulate Location** in Xcode for you, so
-the running session re-reads the file. Two slots are used because Xcode
-caches a re-selected GPX file.
+`--listen` opens Xcode as usual, then builds and runs `GPSSpoofHelper` — a
+small Swift command-line tool that lives in the same Xcode project — in the
+foreground. The helper prints a URL like `http://192.168.1.20:8755` — enter
+it once in the GPSSpoof app on the phone (it is remembered). Type new
+coordinates and tap **Apply location**: the helper writes them into one of
+two alternating GPX slots (`live_a.gpx` / `live_b.gpx`) and clicks
+**Debug ▸ Simulate Location** in Xcode for you, so the running session
+re-reads the file. Two slots are used because Xcode caches a re-selected GPX
+file.
 
 One-time Mac setup: grant **Accessibility** permission to the terminal app
 running the helper (System Settings ▸ Privacy & Security ▸ Accessibility).
@@ -108,10 +109,10 @@ Notes:
 - The first Apply triggers iOS's one-time **Local Network** permission prompt
   on the phone — allow it.
 - Stopping the helper (Ctrl-C) does not end the spoof session; it only stops
-  phone control. Re-run `python3 lib/location_helper.py` to get it back.
+  phone control. Run `./spoof.sh helper` to get it back.
 - If the helper reports a missing menu item, run
-  `python3 lib/location_helper.py --probe-menu` to see the names Xcode
-  actually shows, and check that a debug session is running.
+  `./spoof.sh helper --probe-menu` to see the names Xcode actually shows,
+  and check that a debug session is running.
 
 ## Restoring the real location
 
@@ -129,23 +130,23 @@ Reboot your iPhone to restore normal location reporting.
 ## Tests
 
 ```bash
-bash tests/test_gpx.sh
-bash tests/test_integration.sh
-python3 tests/test_helper.py
+bash tests/test_gpx.sh           # GPX shell functions (sourced from spoof.sh)
+bash tests/test_helper.sh        # Swift helper, black-box over loopback HTTP
+bash tests/test_integration.sh   # end-to-end smoke checks
 ```
 
-These tests run without a physical device.
+These tests run without a physical device. `test_helper.sh` and
+`test_integration.sh` build the `GPSSpoofHelper` target on first run.
 
 ## Project layout
 
 ```
-spoof.sh                                 # Main CLI entrypoint
-setup.sh                                 # One-time setup checks
-lib/gpx.sh                               # GPX generation and validation
-lib/location_helper.py                   # Mac-side phone-control helper
+spoof.sh                                 # Single entry point: setup | spoof | helper
 tests/                                   # Test scripts
-GPSSpoof/project.yml                     # xcodegen configuration
+GPSSpoof/project.yml                     # xcodegen configuration (both targets)
 GPSSpoof/GPSSpoof.xcodeproj/             # Generated project
+GPSSpoof/Helper/                         # GPSSpoofHelper: Mac-side phone-control
+                                         #   helper (Swift command-line tool)
 GPSSpoof/GPSSpoof/AppDelegate.swift      # Minimal iOS app
 GPSSpoof/GPSSpoof/ControlViewController.swift  # Phone-side control UI
 GPSSpoof/GPSSpoof/Info.plist
