@@ -29,16 +29,6 @@ final class Applier {
     func apply(lat: Double, lon: Double) -> (status: Int, json: [String: Any]) {
         lock.lock()
         defer { lock.unlock() }
-        if !dryRun {
-            let session = XcodeTrigger.debugSessionIsRunning()
-            if let failure = session.failure {
-                print("  FAIL - \(failure.message)")
-                return (failure.status, ["ok": false, "error": failure.message])
-            }
-            if !session.running {
-                return relaunch(lat: lat, lon: lon)
-            }
-        }
         let next = GPX.nextSlot(after: slot)
         let file = locationsDir.appendingPathComponent("\(next).gpx")
         do {
@@ -49,9 +39,16 @@ final class Applier {
             print("  FAIL - \(message)")
             return (500, ["ok": false, "error": message])
         }
-        if !dryRun, let failure = XcodeTrigger.clickSimulateLocation(slot: next) {
-            print("  FAIL - \(failure.message)")
-            return (failure.status, ["ok": false, "error": failure.message])
+        if !dryRun {
+            switch XcodeTrigger.applySimulateLocation(slot: next) {
+            case .clicked:
+                break
+            case .sessionDead:
+                return relaunch(lat: lat, lon: lon)
+            case .failed(let status, let message):
+                print("  FAIL - \(message)")
+                return (status, ["ok": false, "error": message])
+            }
         }
         slot = next
         print("  ok   - applied \(GPX.formatCoord(lat)), \(GPX.formatCoord(lon)) via \(next)")
