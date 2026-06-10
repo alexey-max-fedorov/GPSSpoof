@@ -128,4 +128,22 @@ req GET /health
 if has '"slot":"live_a"'; then ok "/health tracks the active slot"
 else fail "/health slot: $(cat "$BODY" 2>/dev/null)"; fi
 
+# 12. mode=v1 accepted; slot still alternates (applies so far: a,b,a,b,a -> next b).
+req POST /location '{"lat": 1, "lon": 2, "mode": "v1"}'
+if [[ "$STATUS" == 200 ]] && has '"slot":"live_b"'; then ok "mode v1 accepted"
+else fail "mode v1 -> $STATUS $(cat "$BODY" 2>/dev/null)"; fi
+
+# 13. mode=v2 accepted explicitly (same behavior as omitting it).
+req POST /location '{"lat": 1, "lon": 2, "mode": "v2"}'
+if [[ "$STATUS" == 200 ]] && has '"slot":"live_a"'; then ok "mode v2 accepted"
+else fail "mode v2 -> $STATUS $(cat "$BODY" 2>/dev/null)"; fi
+
+# 14. Unknown mode -> 400, and the slot pointer does not advance.
+req POST /location '{"lat": 1, "lon": 2, "mode": "v3"}'
+if [[ "$STATUS" == 400 ]] && has '"ok":false'; then ok "400 on unknown mode"
+else fail "mode v3 -> $STATUS"; fi
+req GET /health
+if has '"slot":"live_a"'; then ok "slot unchanged after rejected mode"
+else fail "/health slot after bad mode: $(cat "$BODY" 2>/dev/null)"; fi
+
 exit "$FAILED"

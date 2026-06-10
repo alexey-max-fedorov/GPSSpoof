@@ -124,7 +124,12 @@ do {
             guard GPX.validate(lat: lat, lon: lon) else {
                 return (400, ["ok": false, "error": "lat must be -90..90, lon -180..180"])
             }
-            return applier.apply(lat: lat, lon: lon)
+            // Missing mode means v2 so app builds predating the toggle keep
+            // working; an unrecognized value is a client bug, reject it.
+            guard let mode = ApplyMode(rawValue: (object["mode"] as? String) ?? "v2") else {
+                return (400, ["ok": false, "error": "mode must be \"v1\" or \"v2\""])
+            }
+            return applier.apply(lat: lat, lon: lon, mode: mode)
         default:
             return (404, ["ok": false, "error": "not found"])
         }
