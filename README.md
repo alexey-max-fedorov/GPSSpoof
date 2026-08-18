@@ -2,6 +2,87 @@
 
 Simulate custom GPS coordinates on an iPhone using Xcode's built-in GPX location simulation. macOS only. Works with a free Apple ID. No jailbreak required.
 
+The spoof lasts exactly as long as the Xcode debug Run session. Reboot the iPhone (or flip **spoofing** off in the app) to get real GPS back.
+
+## User guide
+
+Follow this if you just want it running. Everything below this section is reference.
+
+### What you need
+
+- A Mac with **full Xcode** (App Store, not just Command Line Tools)
+- An iPhone on iOS 15+, USB cable, "Trust This Computer" tapped
+- A free Apple ID added in **Xcode → Settings → Accounts**
+- Location Services on (`Settings → Privacy → Location Services`)
+- Optional but recommended: `brew install xcodegen`
+
+### One-time setup
+
+```bash
+./spoof.sh setup
+```
+
+Open `GPSSpoof/GPSSpoof.xcodeproj` in Xcode. Under **Signing & Capabilities**, pick your team. Copy the 10-character Team ID and put it in your shell profile:
+
+```bash
+export TEAM_ID=XXXXXXXXXX
+```
+
+Re-runs of `./spoof.sh setup` only keep the signing team if `TEAM_ID` is set.
+
+### Spoof a location
+
+```bash
+./spoof.sh --lat 37.3861 --lon -122.0839 --name "Mountain View"
+```
+
+That writes the GPX file and opens Xcode. Then:
+
+1. Scheme dropdown = **GPSSpoof** (not `GPSSpoofHelper`)
+2. Run destination = **your iPhone**
+3. Press **Cmd-R**
+4. First run: tap **Allow While Using App** when the app asks for location
+5. When the app shows the spoofed coordinates, you can unplug USB
+
+The fake location is system-wide (Maps, and anything else reading GPS) for as long as that debug session stays alive.
+
+### Move from the phone (optional)
+
+Once a session is running, you can change location without touching the Mac:
+
+```bash
+./spoof.sh --lat 37.3861 --lon -122.0839 --listen
+```
+
+`--listen` also starts `GPSSpoofHelper` on the Mac. It prints a URL like `http://192.168.1.20:8755` — paste that into the app (after the first save it hides behind **helper address**).
+
+One-time Mac permissions for the terminal running the helper:
+
+- **Accessibility** — System Settings → Privacy & Security → Accessibility
+- **Automation** for Xcode — macOS prompts on first use
+
+Then pan the map and tap **Set location to map center**, or type coords and tap **Apply typed coordinates**.
+
+First Apply also triggers iOS's **Local Network** prompt — allow it.
+
+### Keep the session alive
+
+| Do this | Why |
+| ------- | --- |
+| Stay on USB if you can | Immune to WiFi drops |
+| If you unplug: charger on the phone, same WiFi as the Mac, don't switch networks | Wireless debug tunnel dies on network changes |
+| Keep the Mac awake (`caffeinate -dis`) | Mac sleep = session over |
+| Don't force-quit the app or press Stop in Xcode | That ends the debuggee |
+
+The blue location-services pill on the iPhone is the heartbeat — if it's there, you're still spoofing.
+
+### Stop spoofing
+
+- Reboot the iPhone (always restores real GPS)
+- Or, with the helper running, flip **spoofing** off in the app
+
+Don't commit the files in `GPSSpoof/GPSSpoof/locations/` after you've used the tool — they get overwritten with whatever you last spoofed.
+
 ## How it works
 
 Xcode's debug Run action allows overriding the device's reported location with coordinates from a GPX file. This project includes a minimal iOS app that serves as a launchable target. The associated scheme enables location simulation and references a GPX file that is updated as needed.
