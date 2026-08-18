@@ -1,0 +1,13 @@
+{
+  "enabledPlugins": {
+    "ui-ux-pro-max@ui-ux-pro-max-skill": false,
+    "superpowers@claude-plugins-official": true,
+    "swift-lsp@claude-plugins-official": true,
+    "supabase@claude-plugins-official": false,
+    "vercel@claude-plugins-official": false,
+    "ics-calendar@ics-calendar-plugins": false,
+    "context7@claude-plugins-official": false,
+    "typescript-lsp@claude-plugins-official": false,
+    "chrome-devtools-mcp@claude-plugins-official": false
+  }
+}
